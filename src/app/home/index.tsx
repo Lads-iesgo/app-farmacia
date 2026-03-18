@@ -13,62 +13,118 @@ export default function HomeScreen() {
   const { pacientes, medicamentos, farmaceuticos, tratamentos } = useApp();
 
   // Dados do gráfico de tratamentos por mês
-  const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"];
-  const dadosGrafico = [15, 22, 18, 25, 21, 28];
-  const maxValor = Math.max(...dadosGrafico);
+  const nomesMeses = [
+    "Jan",
+    "Fev",
+    "Mar",
+    "Abr",
+    "Mai",
+    "Jun",
+    "Jul",
+    "Ago",
+    "Set",
+    "Out",
+    "Nov",
+    "Dez",
+  ];
 
-  // Medicamentos mais utilizados (simulados ou baseados nos dados)
-  const medicamentosMaisUsados =
-    medicamentos.length > 0
-      ? medicamentos.slice(0, 3).map((med, index) => ({
-          nome: med.nome,
-          quantidade: med.quantidade,
-          dosagem: med.dosagem,
-        }))
-      : [
-          {
-            nome: "Paracetamol 500mg",
-            fabricante: "EMS",
-            quantidade: "150",
-            dosagem: "2x/dia",
-          },
-          {
-            nome: "Ibuprofeno 600mg",
-            fabricante: "Medley",
-            quantidade: "80",
-            dosagem: "2x/dia",
-          },
-          {
-            nome: "Amoxicilina 500mg",
-            fabricante: "Neo Química",
-            quantidade: "65",
-            dosagem: "3x/dia",
-          },
-        ];
+  const ultimosSeisMeses = Array.from({ length: 6 }, (_, index) => {
+    const data = new Date();
+    data.setDate(1);
+    data.setMonth(data.getMonth() - (5 - index));
+    return {
+      mes: data.getMonth(),
+      ano: data.getFullYear(),
+      label: nomesMeses[data.getMonth()],
+    };
+  });
 
-  // Tratamentos recentes
-  const tratamentosRecentes =
-    tratamentos.length > 0
-      ? tratamentos
-          .slice(-3)
-          .reverse()
-          .map((trat) => ({
-            paciente: trat.paciente,
-            medicamento: trat.medicamento,
-            data: trat.dataInicio,
-          }))
-      : [
-          {
-            paciente: "Carlos Oliveira",
-            medicamento: "Paracetamol 500mg",
-            data: "01/01/2026",
-          },
-          {
-            paciente: "Maria Silva",
-            medicamento: "Ibuprofeno 600mg",
-            data: "28/12/2025",
-          },
-        ];
+  const parseDataBR = (valor: string) => {
+    const [diaStr, mesStr, anoStr] = valor.split("/");
+    const dia = Number(diaStr);
+    const mes = Number(mesStr);
+    const ano = Number(anoStr);
+
+    if (!dia || !mes || !ano) return null;
+
+    const data = new Date(ano, mes - 1, dia);
+    if (
+      data.getFullYear() !== ano ||
+      data.getMonth() !== mes - 1 ||
+      data.getDate() !== dia
+    ) {
+      return null;
+    }
+
+    return data;
+  };
+
+  const dadosGrafico = ultimosSeisMeses.map((periodo) => {
+    const total = tratamentos.filter((tratamento) => {
+      const dataInicio = parseDataBR(tratamento.dataInicio || "");
+      if (!dataInicio) return false;
+      return (
+        dataInicio.getMonth() === periodo.mes &&
+        dataInicio.getFullYear() === periodo.ano
+      );
+    }).length;
+
+    return {
+      label: periodo.label,
+      valor: total,
+    };
+  });
+
+  const maxValor = Math.max(1, ...dadosGrafico.map((item) => item.valor));
+
+  // Medicamentos mais utilizados (baseado no uso em tratamentos)
+  const usosPorMedicamento = tratamentos.reduce<Record<string, number>>(
+    (acc, tratamento) => {
+      const chave = tratamento.medicamento.trim().toLowerCase();
+      if (!chave) return acc;
+      acc[chave] = (acc[chave] || 0) + 1;
+      return acc;
+    },
+    {},
+  );
+
+  const medicamentosMaisUsados = Object.entries(usosPorMedicamento)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 3)
+    .map(([nomeNormalizado, totalUsos]) => {
+      const medicamentoCadastro = medicamentos.find(
+        (med) => med.nome.trim().toLowerCase() === nomeNormalizado,
+      );
+
+      return {
+        nome: medicamentoCadastro?.nome || nomeNormalizado,
+        quantidade: `${totalUsos} uso${totalUsos > 1 ? "s" : ""}`,
+        dosagem: medicamentoCadastro?.dosagem || "-",
+      };
+    });
+
+  // Tratamentos recentes (ordenados por data de início)
+  const tratamentosRecentes = tratamentos
+    .map((tratamento, indice) => ({ tratamento, indice }))
+    .sort((a, b) => {
+      const dataA = parseDataBR(a.tratamento.dataInicio || "");
+      const dataB = parseDataBR(b.tratamento.dataInicio || "");
+      const timeA = dataA ? dataA.getTime() : 0;
+      const timeB = dataB ? dataB.getTime() : 0;
+
+      if (timeA === timeB) {
+        return b.indice - a.indice;
+      }
+
+      return timeB - timeA;
+    })
+    .slice(0, 3)
+    .map(({ tratamento }) => ({
+      paciente: tratamento.paciente,
+      medicamento: tratamento.medicamento,
+      farmaceutico: tratamento.farmaceutico || "Não informado",
+      data: tratamento.dataInicio,
+    }));
 
   return (
     <SafeAreaView style={styles.container}>
@@ -89,22 +145,22 @@ export default function HomeScreen() {
         {/* Cards de Estatísticas */}
         <CardEstatistica
           title="Total de pacientes"
-          value={String(pacientes.length || 2)}
+          value={String(pacientes.length)}
           icon={<Users size={24} color={Colors.primary} />}
         />
         <CardEstatistica
           title="Medicamentos em estoque"
-          value={String(medicamentos.length || 230)}
+          value={String(medicamentos.length)}
           icon={<Pill size={24} color={Colors.success} />}
         />
         <CardEstatistica
           title="Farmacêuticos ativos"
-          value={String(farmaceuticos.length || 2)}
+          value={String(farmaceuticos.length)}
           icon={<Stethoscope size={24} color="#8B5CF6" />}
         />
         <CardEstatistica
           title="Tratamentos em andamento"
-          value={String(tratamentos.length || 1)}
+          value={String(tratamentos.length)}
           icon={<ClipboardCheck size={24} color={Colors.success} />}
         />
 
@@ -112,19 +168,19 @@ export default function HomeScreen() {
         <View style={styles.chartCard}>
           <Text style={styles.chartTitle}> Tratamentos por Mês</Text>
           <View style={styles.chartContainer}>
-            {dadosGrafico.map((valor, index) => (
-              <View key={index} style={styles.barContainer}>
-                <Text style={styles.barValue}>{valor}</Text>
+            {dadosGrafico.map((item, index) => (
+              <View key={`${item.label}-${index}`} style={styles.barContainer}>
+                <Text style={styles.barValue}>{item.valor}</Text>
                 <View
                   style={[
                     styles.bar,
                     {
-                      height: (valor / maxValor) * 120,
+                      height: (item.valor / maxValor) * 120,
                       backgroundColor: Colors.primary,
                     },
                   ]}
                 />
-                <Text style={styles.barLabel}>{meses[index]}</Text>
+                <Text style={styles.barLabel}>{item.label}</Text>
               </View>
             ))}
           </View>
@@ -163,7 +219,7 @@ export default function HomeScreen() {
                 <Text style={styles.listItemSub}>{trat.medicamento}</Text>
               </View>
               <View style={styles.listItemRight}>
-                <Text style={styles.listItemSub}>Dr. João Silva</Text>
+                <Text style={styles.listItemSub}>{trat.farmaceutico}</Text>
                 <Text style={styles.listItemDosage}>{trat.data}</Text>
               </View>
             </View>

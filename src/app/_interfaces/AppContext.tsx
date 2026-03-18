@@ -1,6 +1,18 @@
-import React, { createContext, ReactNode, useContext, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { TextInputProps } from "react-native";
 import { useNotification } from "../_components/NotificationContext";
+
+const TRATAMENTOS_STORAGE_KEY = "@app-farmacia:tratamentos";
+const FARMACEUTICOS_STORAGE_KEY = "@app-farmacia:farmaceuticos";
+const MEDICAMENTOS_STORAGE_KEY = "@app-farmacia:medicamentos";
+const PACIENTES_STORAGE_KEY = "@app-farmacia:pacientes";
 
 export interface HeaderProps {
   title?: string;
@@ -105,6 +117,170 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [medicamentos, setMedicamentos] = useState<Medicamento[]>([]);
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [tratamentos, setTratamentos] = useState<Tratamento[]>([]);
+  const [isFarmaceuticosLoaded, setIsFarmaceuticosLoaded] = useState(false);
+  const [isMedicamentosLoaded, setIsMedicamentosLoaded] = useState(false);
+  const [isPacientesLoaded, setIsPacientesLoaded] = useState(false);
+  const [isTratamentosLoaded, setIsTratamentosLoaded] = useState(false);
+
+  useEffect(() => {
+    const carregarFarmaceuticos = async () => {
+      try {
+        const farmaceuticosSalvos = await AsyncStorage.getItem(
+          FARMACEUTICOS_STORAGE_KEY,
+        );
+
+        if (farmaceuticosSalvos) {
+          const parsed = JSON.parse(farmaceuticosSalvos);
+          if (Array.isArray(parsed)) {
+            setFarmaceuticos(parsed);
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao carregar farmacêuticos", error);
+      } finally {
+        setIsFarmaceuticosLoaded(true);
+      }
+    };
+
+    carregarFarmaceuticos();
+  }, []);
+
+  useEffect(() => {
+    if (!isFarmaceuticosLoaded) return;
+
+    const salvarFarmaceuticos = async () => {
+      try {
+        await AsyncStorage.setItem(
+          FARMACEUTICOS_STORAGE_KEY,
+          JSON.stringify(farmaceuticos),
+        );
+      } catch (error) {
+        console.error("Erro ao salvar farmacêuticos", error);
+      }
+    };
+
+    salvarFarmaceuticos();
+  }, [farmaceuticos, isFarmaceuticosLoaded]);
+
+  useEffect(() => {
+    const carregarMedicamentos = async () => {
+      try {
+        const medicamentosSalvos = await AsyncStorage.getItem(
+          MEDICAMENTOS_STORAGE_KEY,
+        );
+
+        if (medicamentosSalvos) {
+          const parsed = JSON.parse(medicamentosSalvos);
+          if (Array.isArray(parsed)) {
+            setMedicamentos(parsed);
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao carregar medicamentos", error);
+      } finally {
+        setIsMedicamentosLoaded(true);
+      }
+    };
+
+    carregarMedicamentos();
+  }, []);
+
+  useEffect(() => {
+    if (!isMedicamentosLoaded) return;
+
+    const salvarMedicamentos = async () => {
+      try {
+        await AsyncStorage.setItem(
+          MEDICAMENTOS_STORAGE_KEY,
+          JSON.stringify(medicamentos),
+        );
+      } catch (error) {
+        console.error("Erro ao salvar medicamentos", error);
+      }
+    };
+
+    salvarMedicamentos();
+  }, [medicamentos, isMedicamentosLoaded]);
+
+  useEffect(() => {
+    const carregarPacientes = async () => {
+      try {
+        const pacientesSalvos = await AsyncStorage.getItem(
+          PACIENTES_STORAGE_KEY,
+        );
+
+        if (pacientesSalvos) {
+          const parsed = JSON.parse(pacientesSalvos);
+          if (Array.isArray(parsed)) {
+            setPacientes(parsed);
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao carregar pacientes", error);
+      } finally {
+        setIsPacientesLoaded(true);
+      }
+    };
+
+    carregarPacientes();
+  }, []);
+
+  useEffect(() => {
+    if (!isPacientesLoaded) return;
+
+    const salvarPacientes = async () => {
+      try {
+        await AsyncStorage.setItem(
+          PACIENTES_STORAGE_KEY,
+          JSON.stringify(pacientes),
+        );
+      } catch (error) {
+        console.error("Erro ao salvar pacientes", error);
+      }
+    };
+
+    salvarPacientes();
+  }, [pacientes, isPacientesLoaded]);
+
+  useEffect(() => {
+    const carregarTratamentos = async () => {
+      try {
+        const tratamentosSalvos = await AsyncStorage.getItem(
+          TRATAMENTOS_STORAGE_KEY,
+        );
+
+        if (tratamentosSalvos) {
+          const parsed = JSON.parse(tratamentosSalvos);
+          if (Array.isArray(parsed)) {
+            setTratamentos(parsed);
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao carregar tratamentos", error);
+      } finally {
+        setIsTratamentosLoaded(true);
+      }
+    };
+
+    carregarTratamentos();
+  }, []);
+
+  useEffect(() => {
+    if (!isTratamentosLoaded) return;
+
+    const salvarTratamentos = async () => {
+      try {
+        await AsyncStorage.setItem(
+          TRATAMENTOS_STORAGE_KEY,
+          JSON.stringify(tratamentos),
+        );
+      } catch (error) {
+        console.error("Erro ao salvar tratamentos", error);
+      }
+    };
+
+    salvarTratamentos();
+  }, [tratamentos, isTratamentosLoaded]);
 
   const generateId = () => Math.random().toString(36).substr(2, 9);
 
