@@ -2,7 +2,6 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { Plus, Search } from "lucide-react-native";
 import React, { useCallback, useState } from "react";
 import {
-  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -15,6 +14,7 @@ import { Colors } from "../_components/Colors";
 import Header from "../_components/Header";
 import ItemLista from "../_components/ItemLista";
 import ModalExclusao from "../_components/ModalExclusao";
+import { useNotification } from "../_components/NotificationContext";
 import api from "../services/api";
 
 const formatarData = (data: string) => {
@@ -37,6 +37,7 @@ export default function PacientesScreen() {
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { showNotification } = useNotification();
 
   const listarPacientes = useCallback(async (skip = 0, take = 50) => {
     try {
@@ -54,7 +55,7 @@ export default function PacientesScreen() {
         error.message ||
         "Falha ao carregar pacientes";
       console.error("❌ Erro ao listar pacientes:", mensagem);
-      Alert.alert("Erro", mensagem);
+      showNotification("error", mensagem);
     } finally {
       setLoading(false);
     }
@@ -83,7 +84,7 @@ export default function PacientesScreen() {
     if (itemToDelete) {
       try {
         await api.delete(`/pacientes/${itemToDelete}`);
-        Alert.alert("Sucesso", "Paciente deletado");
+        showNotification("success", "Paciente excluído com sucesso!");
         listarPacientes();
       } catch (error: any) {
         const mensagem =
@@ -91,7 +92,7 @@ export default function PacientesScreen() {
           error.response?.data?.message ||
           error.message ||
           "Falha ao deletar paciente";
-        Alert.alert("Erro", mensagem);
+        showNotification("error", mensagem);
       }
     }
     setModalVisible(false);

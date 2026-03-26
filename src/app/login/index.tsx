@@ -4,7 +4,6 @@ import { Lock, Mail } from "lucide-react-native";
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -32,7 +31,7 @@ export default function LoginScreen(): React.ReactNode {
     const senhaLimpa = senha.trim();
 
     if (!emailLimpo || !senhaLimpa) {
-      Alert.alert("Erro", "Email e senha são obrigatórios");
+      showNotification("error", "Email e senha são obrigatórios");
       return;
     }
 
@@ -50,11 +49,22 @@ export default function LoginScreen(): React.ReactNode {
 
       if (token) {
         await AsyncStorage.setItem("authToken", token);
+
+        // Salvar nome e permissão do usuário
+        const usuario = response.data?.usuario;
+        if (usuario) {
+          const nome = usuario.nome || "";
+          // Formatar tipo: "COORDENADOR" → "Coordenador"
+          const tipoRaw = usuario.tipo_usuario || "";
+          const permissao =
+            tipoRaw.charAt(0).toUpperCase() + tipoRaw.slice(1).toLowerCase();
+          await AsyncStorage.setItem("@app-farmacia:userName", nome);
+          await AsyncStorage.setItem("@app-farmacia:userRole", permissao);
+        }
       } else {
-        Alert.alert(
-          "Erro",
-          "Token não recebido do servidor. Resposta: " +
-            JSON.stringify(response.data),
+        showNotification(
+          "error",
+          "Token não recebido do servidor. Verifique suas credenciais.",
         );
         setLoading(false);
         return;
@@ -69,7 +79,7 @@ export default function LoginScreen(): React.ReactNode {
         error.response?.data?.message ||
         "Erro ao fazer login. Verifique suas credenciais.";
       console.error("❌ Erro no login:", error);
-      Alert.alert("Erro de Login", mensagem);
+      showNotification("error", mensagem);
     } finally {
       setLoading(false);
     }

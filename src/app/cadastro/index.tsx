@@ -81,7 +81,6 @@ export default function RegisterScreen() {
         error.message ||
         "Erro desconhecido";
 
-      alert(`Erro ao registrar:\n${mensagem}`);
       showNotification("error", mensagem);
     } finally {
       setCarregando(false);

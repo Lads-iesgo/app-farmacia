@@ -6,36 +6,9 @@ import CardEstatistica from "../_components/CardEstatistica";
 import { Colors } from "../_components/Colors";
 import Header from "../_components/Header";
 import { useApp } from "../_interfaces/AppContext";
+import { formatarData, parseData } from "../_utils/formatters";
 
 const screenWidth = Dimensions.get("window").width;
-
-const formatarDataISO = (data: string) => {
-  if (!data) return "-";
-  try {
-    const date = new Date(data);
-    if (isNaN(date.getTime())) return data;
-    const dia = String(date.getDate()).padStart(2, "0");
-    const mes = String(date.getMonth() + 1).padStart(2, "0");
-    const ano = date.getFullYear();
-    return `${dia}/${mes}/${ano}`;
-  } catch {
-    return data;
-  }
-};
-
-const parseData = (valor: string) => {
-  if (!valor) return null;
-  // Tenta ISO primeiro
-  const dateISO = new Date(valor);
-  if (!isNaN(dateISO.getTime())) return dateISO;
-  // Tenta BR (dd/mm/aaaa)
-  const [diaStr, mesStr, anoStr] = valor.split("/");
-  const dia = Number(diaStr);
-  const mes = Number(mesStr);
-  const ano = Number(anoStr);
-  if (!dia || !mes || !ano) return null;
-  return new Date(ano, mes - 1, dia);
-};
 
 export default function HomeScreen() {
   const { pacientes, medicamentos, tratamentos } = useApp();
@@ -66,26 +39,6 @@ export default function HomeScreen() {
       label: nomesMeses[data.getMonth()],
     };
   });
-
-  const parseDataBR = (valor: string) => {
-    const [diaStr, mesStr, anoStr] = valor.split("/");
-    const dia = Number(diaStr);
-    const mes = Number(mesStr);
-    const ano = Number(anoStr);
-
-    if (!dia || !mes || !ano) return null;
-
-    const data = new Date(ano, mes - 1, dia);
-    if (
-      data.getFullYear() !== ano ||
-      data.getMonth() !== mes - 1 ||
-      data.getDate() !== dia
-    ) {
-      return null;
-    }
-
-    return data;
-  };
 
   const dadosGrafico = ultimosSeisMeses.map((periodo) => {
     const total = tratamentos.filter((tratamento) => {
@@ -161,7 +114,7 @@ export default function HomeScreen() {
           String(tratamento.id_paciente),
         medicamento: med?.nome_medicamento || "-",
         farmaceutico: "N/A",
-        data: formatarDataISO(tratamento.data_inicio),
+        data: formatarData(tratamento.data_inicio),
       };
     });
 

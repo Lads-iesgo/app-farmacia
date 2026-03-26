@@ -2,7 +2,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,26 +12,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../_components/Colors";
 import FormInput from "../_components/FormInput";
 import Header from "../_components/Header";
+import { useNotification } from "../_components/NotificationContext";
+import { formatarTelefone, validarEmail } from "../_utils/formatters";
 import api from "../services/api";
-
-const formatarTelefone = (valor: string) => {
-  const numeros = valor.replace(/\D/g, "").slice(0, 11);
-  if (numeros.length <= 10) {
-    return numeros
-      .replace(/(\d{2})(\d)/, "($1) $2")
-      .replace(/(\d{4})(\d)/, "$1-$2");
-  }
-  return numeros
-    .replace(/(\d{2})(\d)/, "($1) $2")
-    .replace(/(\d{5})(\d)/, "$1-$2");
-};
-
-const validarEmail = (valor: string) =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor);
 
 export default function EditarFarmaceuticoScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const { showNotification } = useNotification();
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
@@ -51,7 +38,10 @@ export default function EditarFarmaceuticoScreen() {
         response.data?.farmaceutico || response.data?.data || response.data;
 
       if (!farmaceutico || typeof farmaceutico !== "object") {
-        Alert.alert("Erro", "Farmacêutico não encontrado ou dados inválidos");
+        showNotification(
+          "error",
+          "Farmacêutico não encontrado ou dados inválidos",
+        );
         router.back();
         return;
       }
@@ -68,7 +58,7 @@ export default function EditarFarmaceuticoScreen() {
         error.response?.data?.message ||
         error.message ||
         "Falha ao carregar farmacêutico";
-      Alert.alert("Erro", mensagem);
+      showNotification("error", mensagem);
       router.back();
     } finally {
       setLoading(false);
@@ -82,12 +72,15 @@ export default function EditarFarmaceuticoScreen() {
 
   const handleAtualizar = async () => {
     if (!form.nome || !form.especialidade) {
-      Alert.alert("Erro", "Preencha pelo menos Nome e Especialidade");
+      showNotification("error", "Preencha pelo menos Nome e Especialidade");
       return;
     }
 
     if (form.email && !validarEmail(form.email)) {
-      Alert.alert("Erro", "E-mail inválido. Use o formato exemplo@dominio.com");
+      showNotification(
+        "error",
+        "E-mail inválido. Use o formato exemplo@dominio.com",
+      );
       return;
     }
 
@@ -101,7 +94,7 @@ export default function EditarFarmaceuticoScreen() {
         telefone: form.telefone || null,
         especialidade: form.especialidade,
       });
-      Alert.alert("Sucesso", "Farmacêutico atualizado com sucesso!");
+      showNotification("success", "Farmacêutico atualizado com sucesso!");
       router.push("/farmaceuticos");
     } catch (error: any) {
       const mensagem =
@@ -109,7 +102,7 @@ export default function EditarFarmaceuticoScreen() {
         error.response?.data?.message ||
         error.message ||
         "Falha ao atualizar farmacêutico";
-      Alert.alert("Erro", mensagem);
+      showNotification("error", mensagem);
     } finally {
       setLoading(false);
     }

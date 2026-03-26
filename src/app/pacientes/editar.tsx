@@ -2,7 +2,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,49 +12,21 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../_components/Colors";
 import FormInput from "../_components/FormInput";
 import Header from "../_components/Header";
+import { useNotification } from "../_components/NotificationContext";
 import api from "../services/api";
 
-const formatarCpf = (valor: string) => {
-  const numeros = valor.replace(/\D/g, "").slice(0, 11);
-  return numeros
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-};
-
-const formatarTelefone = (valor: string) => {
-  const numeros = valor.replace(/\D/g, "").slice(0, 11);
-  if (numeros.length <= 10) {
-    return numeros
-      .replace(/(\d{2})(\d)/, "($1) $2")
-      .replace(/(\d{4})(\d)/, "$1-$2");
-  }
-  return numeros
-    .replace(/(\d{2})(\d)/, "($1) $2")
-    .replace(/(\d{5})(\d)/, "$1-$2");
-};
-
-const formatarData = (valor: string) => {
-  const numeros = valor.replace(/\D/g, "").slice(0, 8);
-  return numeros
-    .replace(/(\d{2})(\d)/, "$1/$2")
-    .replace(/(\d{2})(\d)/, "$1/$2");
-};
-
-const converterDataParaISO = (data: string): string => {
-  const partes = data.split("/");
-  if (partes.length === 3) {
-    return `${partes[2]}-${partes[1]}-${partes[0]}`;
-  }
-  return data;
-};
-
-const validarEmail = (valor: string) =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor);
+import {
+  converterDataParaISO,
+  formatarCpf,
+  formatarDataInput,
+  formatarTelefone,
+  validarEmail,
+} from "../_utils/formatters";
 
 export default function EditarPacienteScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const { showNotification } = useNotification();
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
@@ -76,7 +47,7 @@ export default function EditarPacienteScreen() {
         response.data?.paciente || response.data?.data || response.data;
 
       if (!paciente || typeof paciente !== "object") {
-        Alert.alert("Erro", "Paciente não encontrado ou dados inválidos");
+        showNotification("error", "Paciente não encontrado ou dados inválidos");
         router.back();
         return;
       }
@@ -95,7 +66,7 @@ export default function EditarPacienteScreen() {
         error.response?.data?.message ||
         error.message ||
         "Falha ao carregar paciente";
-      Alert.alert("Erro", mensagem);
+      showNotification("error", mensagem);
       router.back();
     } finally {
       setLoading(false);
@@ -109,12 +80,18 @@ export default function EditarPacienteScreen() {
 
   const handleAtualizar = async () => {
     if (!form.nome || !form.numero_identificacao || !form.data_nascimento) {
-      Alert.alert("Erro", "Preencha pelo menos Nome, CPF e Data de Nascimento");
+      showNotification(
+        "error",
+        "Preencha pelo menos Nome, CPF e Data de Nascimento",
+      );
       return;
     }
 
     if (form.email && !validarEmail(form.email)) {
-      Alert.alert("Erro", "E-mail inválido. Use o formato exemplo@dominio.com");
+      showNotification(
+        "error",
+        "E-mail inválido. Use o formato exemplo@dominio.com",
+      );
       return;
     }
 
@@ -130,7 +107,7 @@ export default function EditarPacienteScreen() {
         telefone: form.telefone || null,
         endereco: form.endereco || null,
       });
-      Alert.alert("Sucesso", "Paciente atualizado com sucesso!");
+      showNotification("success", "Paciente atualizado com sucesso!");
       router.push("/pacientes");
     } catch (error: any) {
       const mensagem =
@@ -138,7 +115,7 @@ export default function EditarPacienteScreen() {
         error.response?.data?.message ||
         error.message ||
         "Falha ao atualizar paciente";
-      Alert.alert("Erro", mensagem);
+      showNotification("error", mensagem);
     } finally {
       setLoading(false);
     }
@@ -193,7 +170,7 @@ export default function EditarPacienteScreen() {
             keyboardType="numeric"
             value={form.data_nascimento}
             onChangeText={(v) =>
-              setForm({ ...form, data_nascimento: formatarData(v) })
+              setForm({ ...form, data_nascimento: formatarDataInput(v) })
             }
           />
 

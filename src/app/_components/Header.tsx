@@ -13,12 +13,11 @@ import { Colors } from "./Colors";
 import { useNavbar } from "./NavbarContext";
 
 interface HeaderProps {
-  title?: string;
   image?: ImageSourcePropType;
   onMenuPress?: () => void;
 }
 
-export default function Header({ title, image, onMenuPress }: HeaderProps) {
+export default function Header({ image, onMenuPress }: HeaderProps) {
   const { open } = useNavbar();
 
   const handleMenu = onMenuPress || open;
@@ -55,12 +54,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 40,
   },
-  logoText: {
-    color: Colors.white,
-    fontSize: 20,
-    fontWeight: "bold",
-    letterSpacing: 1,
-  },
+
   menuButton: {
     padding: 8,
     marginRight: -8,

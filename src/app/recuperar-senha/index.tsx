@@ -11,28 +11,29 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useNotification } from "../_components/NotificationContext";
 import api from "../services/api";
-
-async function esquecisenha(email: string) {
-  if (!email.trim()) {
-    alert("Por favor, digite seu e-mail");
-    return;
-  }
-
-  try {
-    const response = await api.post("/auth/recuperar-senha", { email });
-    alert("E-mail de recuperação enviado com sucesso!");
-  } catch (error: any) {
-    console.error("Erro ao solicitar recuperação:", error);
-    const mensagem =
-      error.response?.data?.error ||
-      "Erro ao solicitar recuperação. Tente novamente.";
-    alert(mensagem);
-  }
-}
 
 export default function EsqueciSenha() {
   const [email, setEmail] = React.useState("");
+  const { showNotification } = useNotification();
+
+  const esquecisenha = async (emailInput: string) => {
+    if (!emailInput.trim()) {
+      showNotification("error", "Por favor, digite seu e-mail");
+      return;
+    }
+    try {
+      await api.post("/auth/recuperar-senha", { email: emailInput });
+      showNotification("success", "E-mail de recuperação enviado com sucesso!");
+    } catch (error: any) {
+      console.error("Erro ao solicitar recuperação:", error);
+      const mensagem =
+        error.response?.data?.error ||
+        "Erro ao solicitar recuperação. Tente novamente.";
+      showNotification("error", mensagem);
+    }
+  };
 
   return (
     <KeyboardAvoidingView

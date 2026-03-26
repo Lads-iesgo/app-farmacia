@@ -3,7 +3,6 @@ import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,44 +13,29 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../_components/Colors";
 import FormInput from "../_components/FormInput";
 import Header from "../_components/Header";
+import { useNotification } from "../_components/NotificationContext";
 import SelectField from "../_components/Select";
+import {
+  converterDataParaISO,
+  formatarCpf,
+  formatarDataInput,
+} from "../_utils/formatters";
 import api from "../services/api";
-
-const formatarData = (valor: string) => {
-  const numeros = valor.replace(/\D/g, "").slice(0, 8);
-  return numeros
-    .replace(/(\d{2})(\d)/, "$1/$2")
-    .replace(/(\d{2})(\d)/, "$1/$2");
-};
-
-const formatarCpf = (valor: string) => {
-  const numeros = valor.replace(/\D/g, "").slice(0, 11);
-  return numeros
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-};
-
-const decodificarToken = (token: string) => {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const decoded = JSON.parse(atob(parts[1]));
-    return decoded;
-  } catch {
-    return null;
-  }
-};
-
-const converterDataParaISO = (data: string) => {
-  if (!data || data.length < 10) return null;
-  const [dia, mes, ano] = data.split("/");
-  return `${ano}-${mes}-${dia}`;
-};
 
 export default function CadastroPacienteScreen() {
   const router = useRouter();
+  const { showNotification } = useNotification();
   const [loading, setLoading] = useState(false);
+
+  const decodificarToken = (token: string) => {
+    try {
+      const parts = token.split(".");
+      if (parts.length !== 3) return null;
+      return JSON.parse(atob(parts[1]));
+    } catch {
+      return null;
+    }
+  };
 
   const [form, setForm] = useState({
     nome: "",
@@ -68,7 +52,7 @@ export default function CadastroPacienteScreen() {
 
   const handleCadastrar = async () => {
     if (!form.nome || !form.numeroIdentificacao) {
-      Alert.alert("Erro", "Preencha nome e CPF");
+      showNotification("error", "Preencha nome e CPF");
       return;
     }
 
@@ -76,7 +60,7 @@ export default function CadastroPacienteScreen() {
     try {
       const token = await AsyncStorage.getItem("authToken");
       if (!token) {
-        Alert.alert("Erro", "Token não encontrado. Faça login novamente");
+        showNotification("error", "Token não encontrado. Faça login novamente");
         setLoading(false);
         return;
       }
@@ -85,7 +69,7 @@ export default function CadastroPacienteScreen() {
       const idUsuario = decoded?.id || decoded?.id_usuario || decoded?.sub;
 
       if (!idUsuario) {
-        Alert.alert("Erro", "ID do usuário não encontrado no token");
+        showNotification("error", "ID do usuário não encontrado no token");
         setLoading(false);
         return;
       }
@@ -103,7 +87,7 @@ export default function CadastroPacienteScreen() {
         alergias: form.alergias || null,
       });
 
-      Alert.alert("Sucesso", "Paciente cadastrado");
+      showNotification("success", "Paciente cadastrado com sucesso!");
       router.push("/pacientes");
     } catch (error: any) {
       const mensagem =
@@ -112,7 +96,7 @@ export default function CadastroPacienteScreen() {
         error.message ||
         "Falha ao cadastrar paciente";
       console.error("❌ Erro:", mensagem);
-      Alert.alert("Erro", mensagem);
+      showNotification("error", mensagem);
     } finally {
       setLoading(false);
     }
@@ -208,7 +192,7 @@ export default function CadastroPacienteScreen() {
             keyboardType="numeric"
             value={form.dataNascimento}
             onChangeText={(v) =>
-              setForm({ ...form, dataNascimento: formatarData(v) })
+              setForm({ ...form, dataNascimento: formatarDataInput(v) })
             }
           />
 

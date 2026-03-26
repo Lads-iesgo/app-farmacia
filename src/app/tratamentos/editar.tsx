@@ -2,7 +2,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../_components/Colors";
 import FormInput from "../_components/FormInput";
 import Header from "../_components/Header";
+import { useNotification } from "../_components/NotificationContext";
 import Select from "../_components/Select";
 import api from "../services/api";
 
@@ -34,6 +34,7 @@ const converterDataParaISO = (data: string): string => {
 export default function EditarTratamentoScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const { showNotification } = useNotification();
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
@@ -90,7 +91,10 @@ export default function EditarTratamentoScreen() {
       );
 
       if (!tratamento || typeof tratamento !== "object") {
-        Alert.alert("Erro", "Tratamento não encontrado ou dados inválidos");
+        showNotification(
+          "error",
+          "Tratamento não encontrado ou dados inválidos",
+        );
         router.back();
         return;
       }
@@ -111,7 +115,7 @@ export default function EditarTratamentoScreen() {
         error.response?.data?.message ||
         error.message ||
         "Falha ao carregar tratamento";
-      Alert.alert("Erro", mensagem);
+      showNotification("error", mensagem);
       router.back();
     } finally {
       setLoading(false);
@@ -125,8 +129,8 @@ export default function EditarTratamentoScreen() {
 
   const handleAtualizar = async () => {
     if (!form.id_paciente || !form.id_medicamento || !form.data_inicio) {
-      Alert.alert(
-        "Erro",
+      showNotification(
+        "error",
         "Preencha pelo menos Paciente, Medicamento e Data de Início",
       );
       return;
@@ -146,7 +150,7 @@ export default function EditarTratamentoScreen() {
         motivo: form.motivo || null,
         instrucoes: form.instrucoes || null,
       });
-      Alert.alert("Sucesso", "Tratamento atualizado com sucesso!");
+      showNotification("success", "Tratamento atualizado com sucesso!");
       router.push("/tratamentos");
     } catch (error: any) {
       const mensagem =
@@ -154,7 +158,7 @@ export default function EditarTratamentoScreen() {
         error.response?.data?.message ||
         error.message ||
         "Falha ao atualizar tratamento";
-      Alert.alert("Erro", mensagem);
+      showNotification("error", mensagem);
     } finally {
       setLoading(false);
     }

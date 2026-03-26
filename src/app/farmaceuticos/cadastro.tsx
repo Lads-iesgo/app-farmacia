@@ -2,7 +2,6 @@ import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,10 +12,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../_components/Colors";
 import FormInput from "../_components/FormInput";
 import Header from "../_components/Header";
+import { useNotification } from "../_components/NotificationContext";
+import { formatarTelefone } from "../_utils/formatters";
 import api from "../services/api";
 
 export default function CadastroFarmaceuticoScreen() {
   const router = useRouter();
+  const { showNotification } = useNotification();
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
@@ -26,16 +28,9 @@ export default function CadastroFarmaceuticoScreen() {
     especialidade: "",
   });
 
-  const formatarTelefone = (valor: string) => {
-    const numeros = valor.replace(/\D/g, "").slice(0, 11);
-    if (numeros.length <= 2) return numeros;
-    if (numeros.length <= 7) return numeros.replace(/(\d{2})(\d)/, "($1) $2");
-    return numeros.replace(/(\d{2})(\d{5})(\d)/, "($1) $2-$3");
-  };
-
   const handleCadastrar = async () => {
     if (!form.nome || !form.email || !form.telefone) {
-      Alert.alert("Erro", "Preencha nome, email e telefone");
+      showNotification("error", "Preencha nome, email e telefone");
       return;
     }
 
@@ -48,10 +43,10 @@ export default function CadastroFarmaceuticoScreen() {
         especialidade: form.especialidade || null,
       });
 
-      Alert.alert("Sucesso", "Farmacêutico cadastrado");
+      showNotification("success", "Farmacêutico cadastrado com sucesso!");
       router.push("/farmaceuticos");
     } catch {
-      Alert.alert("Erro", "Falha ao cadastrar farmacêutico");
+      showNotification("error", "Falha ao cadastrar farmacêutico");
     } finally {
       setLoading(false);
     }

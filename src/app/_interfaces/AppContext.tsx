@@ -165,10 +165,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     loadPacientes();
     loadTratamentos();
     loadAdesoes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Load medicamentos from API
+  // Carregar medicamentos para API
   const loadMedicamentos = async () => {
     try {
       const response = await api.get("/medicamentos");
@@ -179,7 +178,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Load pacientes from API
+  // Carregar pacientes para API
   const loadPacientes = async () => {
     try {
       const response = await api.get("/pacientes");
@@ -190,7 +189,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Load tratamentos from API
+  // Carregar tratamentos para API
   const loadTratamentos = async () => {
     try {
       const response = await api.get("/tratamentos");
@@ -201,7 +200,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Load adesoes from API
+  // Carregar adesoes para API
   const loadAdesoes = async () => {
     try {
       const response = await api.get("/adesoes");

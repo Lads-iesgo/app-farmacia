@@ -2,7 +2,6 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { Plus, Search } from "lucide-react-native";
 import React, { useCallback, useState } from "react";
 import {
-  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -15,6 +14,7 @@ import { Colors } from "../_components/Colors";
 import Header from "../_components/Header";
 import ItemLista from "../_components/ItemLista";
 import ModalExclusao from "../_components/ModalExclusao";
+import { useNotification } from "../_components/NotificationContext";
 import api from "../services/api";
 
 const formatarData = (data: string) => {
@@ -40,6 +40,7 @@ export default function TratamentosScreen() {
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { showNotification } = useNotification();
 
   const listarTratamentos = useCallback(async (skip = 0, take = 50) => {
     try {
@@ -71,7 +72,7 @@ export default function TratamentosScreen() {
         error.message ||
         "Falha ao carregar tratamentos";
       console.error("❌ Erro:", mensagem);
-      Alert.alert("Erro", mensagem);
+      showNotification("error", mensagem);
     } finally {
       setLoading(false);
     }
@@ -117,7 +118,7 @@ export default function TratamentosScreen() {
     if (itemToDelete) {
       try {
         await api.delete(`/tratamentos/${itemToDelete}`);
-        Alert.alert("Sucesso", "Tratamento deletado");
+        showNotification("success", "Tratamento excluído com sucesso!");
         listarTratamentos();
       } catch (error: any) {
         const mensagem =
@@ -125,7 +126,7 @@ export default function TratamentosScreen() {
           error.response?.data?.message ||
           error.message ||
           "Falha ao deletar tratamento";
-        Alert.alert("Erro", mensagem);
+        showNotification("error", mensagem);
       }
     }
     setModalVisible(false);

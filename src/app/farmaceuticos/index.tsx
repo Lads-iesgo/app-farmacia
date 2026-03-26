@@ -2,7 +2,6 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { Plus, Search } from "lucide-react-native";
 import React, { useCallback, useState } from "react";
 import {
-  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -15,6 +14,7 @@ import { Colors } from "../_components/Colors";
 import Header from "../_components/Header";
 import ItemLista from "../_components/ItemLista";
 import ModalExclusao from "../_components/ModalExclusao";
+import { useNotification } from "../_components/NotificationContext";
 import api from "../services/api";
 
 export default function FarmaceuticosScreen() {
@@ -24,6 +24,7 @@ export default function FarmaceuticosScreen() {
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { showNotification } = useNotification();
 
   const listarFarmaceuticos = useCallback(async (skip = 0, take = 50) => {
     try {
@@ -42,7 +43,7 @@ export default function FarmaceuticosScreen() {
         error.message ||
         "Falha ao carregar farmacêuticos";
       console.error("❌ Erro:", mensagem);
-      Alert.alert("Erro", mensagem);
+      showNotification("error", mensagem);
     } finally {
       setLoading(false);
     }
@@ -71,7 +72,7 @@ export default function FarmaceuticosScreen() {
     if (itemToDelete) {
       try {
         await api.delete(`/farmaceuticos/${itemToDelete}`);
-        Alert.alert("Sucesso", "Farmacêutico deletado");
+        showNotification("success", "Farmacêutico excluído com sucesso!");
         listarFarmaceuticos();
       } catch (error: any) {
         const mensagem =
@@ -79,7 +80,7 @@ export default function FarmaceuticosScreen() {
           error.response?.data?.message ||
           error.message ||
           "Falha ao deletar farmacêutico";
-        Alert.alert("Erro", mensagem);
+        showNotification("error", mensagem);
       }
     }
     setModalVisible(false);

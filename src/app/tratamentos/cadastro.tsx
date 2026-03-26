@@ -2,7 +2,6 @@ import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../_components/Colors";
 import FormInput from "../_components/FormInput";
 import Header from "../_components/Header";
+import { useNotification } from "../_components/NotificationContext";
 import SelectField from "../_components/Select";
 import api from "../services/api";
 
@@ -31,6 +31,7 @@ const converterDataParaISO = (data: string) => {
 
 export default function CadastroTratamentoScreen() {
   const router = useRouter();
+  const { showNotification } = useNotification();
   const [pacientes, setPacientes] = useState<any[]>([]);
   const [medicamentos, setMedicamentos] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -64,7 +65,7 @@ export default function CadastroTratamentoScreen() {
             (Array.isArray(medResponse.data) ? medResponse.data : []),
         );
       } catch {
-        Alert.alert("Erro", "Falha ao carregar dados");
+        showNotification("error", "Falha ao carregar dados");
       }
     };
     carregarDados();
@@ -77,8 +78,8 @@ export default function CadastroTratamentoScreen() {
       !form.dataInicio ||
       !form.frequencia
     ) {
-      Alert.alert(
-        "Erro",
+      showNotification(
+        "error",
         "Preencha campos obrigatórios: Paciente, Medicamento, Data e Frequência",
       );
       return;
@@ -104,7 +105,10 @@ export default function CadastroTratamentoScreen() {
       }
 
       if (!idUsuarioCriador) {
-        Alert.alert("Erro", "Usuário não identificado. Faça login novamente.");
+        showNotification(
+          "error",
+          "Usuário não identificado. Faça login novamente.",
+        );
         setLoading(false);
         return;
       }
@@ -121,7 +125,7 @@ export default function CadastroTratamentoScreen() {
         instrucoes_especiais: form.instrucoes || null,
       });
 
-      Alert.alert("Sucesso", "Tratamento cadastrado");
+      showNotification("success", "Tratamento cadastrado com sucesso!");
       router.push("/tratamentos");
     } catch (error: any) {
       const mensagem =
@@ -129,7 +133,7 @@ export default function CadastroTratamentoScreen() {
         error.response?.data?.message ||
         error.message ||
         "Falha ao cadastrar tratamento";
-      Alert.alert("Erro", mensagem);
+      showNotification("error", mensagem);
     } finally {
       setLoading(false);
     }

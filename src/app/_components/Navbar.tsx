@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { usePathname, useRouter } from "expo-router";
 import {
   ClipboardList,
@@ -21,6 +22,7 @@ import {
   View,
 } from "react-native";
 import { Colors } from "./Colors";
+import { useNotification } from "./NotificationContext";
 
 interface NavbarProps {
   visible: boolean;
@@ -43,6 +45,25 @@ export default function Navbar({ visible, onClose }: NavbarProps) {
   const pathname = usePathname();
   const slideAnim = React.useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const { showNotification } = useNotification();
+  const [userName, setUserName] = React.useState("");
+  const [userRole, setUserRole] = React.useState("");
+
+  React.useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const name = await AsyncStorage.getItem("@app-farmacia:userName");
+        const role = await AsyncStorage.getItem("@app-farmacia:userRole");
+        if (name) setUserName(name);
+        if (role) setUserRole(role);
+      } catch (e) {
+        console.error("Erro ao carregar dados do usuário:", e);
+      }
+    };
+    if (visible) {
+      loadUserData();
+    }
+  }, [visible]);
 
   React.useEffect(() => {
     if (visible) {
@@ -81,7 +102,16 @@ export default function Navbar({ visible, onClose }: NavbarProps) {
     }, 200);
   };
 
-  const handleSair = () => {
+  const handleSair = async () => {
+    try {
+      await AsyncStorage.removeItem("authToken");
+      await AsyncStorage.removeItem("@app-farmacia:userId");
+      await AsyncStorage.removeItem("@app-farmacia:userName");
+      await AsyncStorage.removeItem("@app-farmacia:userRole");
+      showNotification("success", "Logout realizado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+    }
     onClose();
     setTimeout(() => {
       router.replace("/login" as any);
@@ -144,12 +174,28 @@ export default function Navbar({ visible, onClose }: NavbarProps) {
 
         {/* Sair */}
         <View style={styles.bottomSection}>
+          {/* Perfil do usuário */}
+          <View style={styles.userProfile}>
+            <View style={styles.userAvatar}>
+              <Text style={styles.userAvatarText}>
+                {userName ? userName.charAt(0).toUpperCase() : "U"}
+              </Text>
+            </View>
+            <View style={styles.userInfo}>
+              <Text style={styles.userName} numberOfLines={1}>
+                {userName || "Usuário"}
+              </Text>
+              <Text style={styles.userRole} numberOfLines={1}>
+                {userRole || ""}
+              </Text>
+            </View>
+          </View>
           <TouchableOpacity
             style={styles.logoutButton}
             onPress={handleSair}
-            activeOpacity={0.9}
+            activeOpacity={0.7}
           >
-            <LogOut size={30} color="#EF4444" />
+            <LogOut size={20} color="rgba(229, 231, 235, 1)" />
             <Text style={styles.logoutText}>Sair</Text>
           </TouchableOpacity>
         </View>
@@ -220,20 +266,57 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   bottomSection: {
-    paddingHorizontal: 12,
-    paddingBottom: 40,
+    paddingHorizontal: 16,
+    paddingVertical: 24,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(30, 58, 138, 0.6)",
   },
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
+    width: "100%",
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 10,
+    borderRadius: 8,
   },
   logoutText: {
-    color: "#EF4444",
+    color: "rgba(229, 231, 235, 1)",
+    fontSize: 18,
+    fontWeight: "500",
+    marginLeft: 12,
+  },
+  userProfile: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    marginBottom: 8,
+  },
+  userAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#C084FC",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  userAvatarText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    color: Colors.white,
     fontSize: 15,
     fontWeight: "600",
-    marginLeft: 14,
+  },
+  userRole: {
+    color: "rgba(209, 213, 219, 1)",
+    fontSize: 13,
+    marginTop: 2,
   },
 });

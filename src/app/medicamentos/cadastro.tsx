@@ -2,7 +2,6 @@ import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,10 +12,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../_components/Colors";
 import FormInput from "../_components/FormInput";
 import Header from "../_components/Header";
+import { useNotification } from "../_components/NotificationContext";
 import api from "../services/api";
 
 export default function CadastroMedicamentoScreen() {
   const router = useRouter();
+  const { showNotification } = useNotification();
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
@@ -32,7 +33,7 @@ export default function CadastroMedicamentoScreen() {
       !form.dosagem.trim() ||
       !form.apresentacao.trim()
     ) {
-      Alert.alert("Erro", "Preencha nome, dosagem e apresentação");
+      showNotification("error", "Preencha nome, dosagem e apresentação");
       return;
     }
 
@@ -45,10 +46,10 @@ export default function CadastroMedicamentoScreen() {
         descricao: form.descricao.trim() || null,
       });
 
-      Alert.alert("Sucesso", "Medicamento cadastrado");
+      showNotification("success", "Medicamento cadastrado com sucesso!");
       router.push("/medicamentos");
     } catch {
-      Alert.alert("Erro", "Falha ao cadastrar medicamento");
+      showNotification("error", "Falha ao cadastrar medicamento");
     } finally {
       setLoading(false);
     }

@@ -15,7 +15,7 @@ interface FormInputProps extends TextInputProps {
 
 export default function FormInput({
   label,
-  required = true,
+  required = false,
   style,
   ...rest
 }: FormInputProps) {
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   required: {
-    color: Colors.text,
+    color: Colors.danger,
   },
   input: {
     backgroundColor: Colors.white,
