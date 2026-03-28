@@ -199,9 +199,8 @@ export default function CadastroAdesaoScreen() {
             sound: true,
           },
           trigger: {
-            type: "calendar",
             date: trigger,
-          } as any,
+          },
         });
       }
 
