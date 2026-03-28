@@ -26,7 +26,6 @@
     "expo-symbols": "~55.0.5",
     "expo-web-browser": "~55.0.10",
     "lucide-react-native": "^0.577.0",
-    "picker-react": "^1.4.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-native": "^0.83.2",
@@ -41,6 +40,17 @@
     "@types/react": "~19.2.2",
     "jimp": "^0.16.13",
     "typescript": "~5.9.2"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "expo",
+        "expo-linking",
+        "expo-notifications",
+        "expo-router",
+        "expo-splash-screen"
+      ]
+    }
   },
   "private": true
 }
