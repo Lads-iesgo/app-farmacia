@@ -200,7 +200,10 @@ export default function CadastroAdesaoScreen() {
               body: `Chegou a hora de tomar: ${nomeMed}.`,
               sound: true,
             },
-            trigger: trigger,
+            trigger: {
+              date: trigger,
+              channelId: "default",
+            },
           });
         }
       }
