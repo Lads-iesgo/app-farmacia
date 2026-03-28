@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import React, { useState } from "react";
 import {
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -192,16 +193,16 @@ export default function CadastroAdesaoScreen() {
         );
         const nomeMed = medicamentoInfo?.nome_medicamento || "Medicamento";
 
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: "Hora do Tratamento! 💊",
-            body: `Chegou a hora de tomar: ${nomeMed}.`,
-            sound: true,
-          },
-          trigger: {
-            date: trigger,
-          },
-        });
+        if (Platform.OS !== "web") {
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: "Hora do Tratamento! 💊",
+              body: `Chegou a hora de tomar: ${nomeMed}.`,
+              sound: true,
+            },
+            trigger: trigger,
+          });
+        }
       }
 
       showNotification("success", "Adesão registrada com sucesso!");
