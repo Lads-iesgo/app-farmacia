@@ -52,6 +52,28 @@ export default function CadastroTratamentoScreen() {
   React.useEffect(() => {
     const carregarDados = async () => {
       try {
+        const AsyncStorage = (
+          await import("@react-native-async-storage/async-storage")
+        ).default;
+        const token = await AsyncStorage.getItem("authToken");
+        let idLogado: string | null = null;
+        if (token) {
+          try {
+            const parts = token.split(".");
+            if (parts.length === 3) {
+              const decoded = JSON.parse(atob(parts[1]));
+              idLogado = String(
+                decoded?.id_usuario || decoded?.id || decoded?.sub || "",
+              );
+            }
+          } catch {}
+        }
+
+        const storedCriados = await AsyncStorage.getItem(
+          "@app-farmacia:meusPacientesCriados",
+        );
+        const meusCriadosLocal = storedCriados ? JSON.parse(storedCriados) : [];
+
         const [pacResponse, medResponse, farmResponse] = await Promise.all([
           api.get("/pacientes", { params: { skip: 0, take: 100 } }),
           api.get("/medicamentos", { params: { skip: 0, take: 100 } }),
@@ -59,21 +81,50 @@ export default function CadastroTratamentoScreen() {
             .get("/farmaceuticos", { params: { skip: 0, take: 100 } })
             .catch(() => ({ data: [] })),
         ]);
-        setPacientes(
+
+        const allPacientes =
           pacResponse.data.dados ||
-            pacResponse.data.pacientes ||
-            (Array.isArray(pacResponse.data) ? pacResponse.data : []),
+          pacResponse.data.pacientes ||
+          (Array.isArray(pacResponse.data) ? pacResponse.data : []);
+
+        // Filtra pacientes apenas feitos por este usuario ou cadastrados localmente
+        const pacientesFiltrados = allPacientes.filter(
+          (p: any) =>
+            String(p.id_usuario_criador) === String(idLogado) ||
+            meusCriadosLocal.includes(String(p.id_paciente)),
         );
+        setPacientes(pacientesFiltrados);
+
         setMedicamentos(
           medResponse.data.medicamentos ||
             medResponse.data.dados ||
             (Array.isArray(medResponse.data) ? medResponse.data : []),
         );
-        setFarmaceuticos(
+
+        const allFarmaceuticos =
           farmResponse.data.farmaceuticos ||
-            farmResponse.data.dados ||
-            (Array.isArray(farmResponse.data) ? farmResponse.data : []),
+          farmResponse.data.dados ||
+          (Array.isArray(farmResponse.data) ? farmResponse.data : []);
+
+        // Filtra farmaceuticos para aparecer apenas o proprio usuario logado
+        const farmaceuticosFiltrados = allFarmaceuticos.filter(
+          (f: any) =>
+            String(f.id_usuario) === String(idLogado) ||
+            String(f.id_farmaceutico) === String(idLogado),
         );
+        setFarmaceuticos(farmaceuticosFiltrados);
+
+        // Se encontrou o próprio farmaceutico, já seleciona automaticamente
+        if (farmaceuticosFiltrados.length === 1) {
+          setForm((prev) => ({
+            ...prev,
+            idFarmaceutico: String(
+              farmaceuticosFiltrados[0].id_farmaceutico ||
+                farmaceuticosFiltrados[0].id_usuario ||
+                "",
+            ),
+          }));
+        }
       } catch {
         showNotification("error", "Falha ao carregar dados");
       }

@@ -123,6 +123,7 @@ export default function LoginScreen(): React.ReactNode {
                 style={styles.inputIcon}
               />
               <TextInput
+                style={styles.input}
                 value={email}
                 onChangeText={setEmail}
                 placeholder="E-mail"
@@ -141,6 +142,7 @@ export default function LoginScreen(): React.ReactNode {
                 style={styles.inputIcon}
               />
               <TextInput
+                style={styles.input}
                 value={senha}
                 onChangeText={setSenha}
                 placeholder="Senha"

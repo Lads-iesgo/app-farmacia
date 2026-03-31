@@ -149,8 +149,14 @@ export default function Navbar({ visible, onClose }: NavbarProps) {
         <View style={styles.menuContainer}>
           {allMenuItems
             .filter((item) => {
-              if (userRole?.toUpperCase() === "PACIENTE") {
+              const role = userRole?.toUpperCase();
+              if (role === "PACIENTE") {
                 return ["Dashboard", "Tratamentos", "Adesões"].includes(
+                  item.label,
+                );
+              }
+              if (role === "ALUNO") {
+                return ["Tratamentos", "Pacientes", "Adesões"].includes(
                   item.label,
                 );
               }

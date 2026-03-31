@@ -2,6 +2,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { Plus, Search } from "lucide-react-native";
 import React, { useCallback, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   StyleSheet,
   Text,
@@ -143,15 +144,24 @@ export default function FarmaceuticosScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContainer}
             ListEmptyComponent={
-              <Text
-                style={{
-                  textAlign: "center",
-                  color: Colors.textSecondary,
-                  marginTop: 20,
-                }}
-              >
-                Nenhum farmacêutico encontrado.
-              </Text>
+              loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={Colors.primary} />
+                  <Text style={{ color: Colors.textSecondary, marginTop: 12 }}>
+                    Carregando farmacêuticos...
+                  </Text>
+                </View>
+              ) : (
+                <Text
+                  style={{
+                    textAlign: "center",
+                    color: Colors.textSecondary,
+                    marginTop: 20,
+                  }}
+                >
+                  Nenhum farmaceutico encontrado.
+                </Text>
+              )
             }
             renderItem={({ item, index }) => (
               <ItemLista
@@ -239,4 +249,10 @@ const styles = StyleSheet.create({
   searchIcon: { marginRight: 8 },
   searchInput: { flex: 1, height: "100%", fontSize: 14, color: Colors.text },
   listContainer: { paddingBottom: 20 },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 40,
+  },
 });

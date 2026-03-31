@@ -87,8 +87,19 @@ export default function CadastroAdesaoScreen() {
         ).default;
         const role =
           (await AsyncStorage.getItem("@app-farmacia:userRole")) || "";
-        const idStr =
+        let idStr =
           (await AsyncStorage.getItem("@app-farmacia:userId")) || "";
+          
+        const token = await AsyncStorage.getItem("authToken");
+        if (token) {
+          try {
+            const parts = token.split(".");
+            if (parts.length === 3) {
+              const decoded = JSON.parse(atob(parts[1]));
+              idStr = String(decoded?.id_usuario || decoded?.id || decoded?.sub || idStr);
+            }
+          } catch {}
+        }
 
         const [tratResponse, pacResponse, medResponse] = await Promise.all([
           api.get("/tratamentos", { params: { skip: 0, take: 100 } }),
@@ -120,6 +131,10 @@ export default function CadastroAdesaoScreen() {
           } else {
             tratDados = [];
           }
+        } else if (role.toUpperCase() === "ALUNO" || role.toUpperCase() === "FARMACEUTICO") {
+          tratDados = tratDados.filter(
+            (t: any) => String(t.id_usuario_criador) === String(idStr) || String(t.id_farmaceutico) === String(idStr)
+          );
         }
 
         setTratamentos(tratDados);

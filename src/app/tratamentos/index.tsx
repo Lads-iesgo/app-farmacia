@@ -2,6 +2,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { Plus, Search } from "lucide-react-native";
 import React, { useCallback, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   StyleSheet,
   Text,
@@ -52,7 +53,21 @@ export default function TratamentosScreen() {
         await import("@react-native-async-storage/async-storage")
       ).default;
       const role = (await AsyncStorage.getItem("@app-farmacia:userRole")) || "";
-      const idStr = (await AsyncStorage.getItem("@app-farmacia:userId")) || "";
+      let idStr = (await AsyncStorage.getItem("@app-farmacia:userId")) || "";
+
+      const token = await AsyncStorage.getItem("authToken");
+      if (token) {
+        try {
+          const parts = token.split(".");
+          if (parts.length === 3) {
+            const decoded = JSON.parse(atob(parts[1]));
+            idStr = String(
+              decoded?.id_usuario || decoded?.id || decoded?.sub || idStr,
+            );
+          }
+        } catch {}
+      }
+
       setUserRole(role.toUpperCase());
       setUserId(idStr);
 
@@ -85,6 +100,15 @@ export default function TratamentosScreen() {
         } else {
           dados = [];
         }
+      } else if (
+        role.toUpperCase() === "ALUNO" ||
+        role.toUpperCase() === "FARMACEUTICO"
+      ) {
+        dados = dados.filter(
+          (t: any) =>
+            String(t.id_usuario_criador) === String(idStr) ||
+            String(t.id_farmaceutico) === String(idStr),
+        );
       }
 
       setTratamentos(dados);
@@ -229,19 +253,30 @@ export default function TratamentosScreen() {
 
           <FlatList
             data={filteredTratamentos}
-            keyExtractor={(item) => item.id_tratamento || ""}
+            keyExtractor={(item, index) =>
+              item.id_tratamento ? String(item.id_tratamento) : String(index)
+            }
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContainer}
             ListEmptyComponent={
-              <Text
-                style={{
-                  textAlign: "center",
-                  color: Colors.textSecondary,
-                  marginTop: 20,
-                }}
-              >
-                Nenhum tratamento encontrado.
-              </Text>
+              loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={Colors.primary} />
+                  <Text style={{ color: Colors.textSecondary, marginTop: 12 }}>
+                    Carregando tratamentos...
+                  </Text>
+                </View>
+              ) : (
+                <Text
+                  style={{
+                    textAlign: "center",
+                    color: Colors.textSecondary,
+                    marginTop: 20,
+                  }}
+                >
+                  Nenhum tratamento encontrado.
+                </Text>
+              )
             }
             renderItem={({ item, index }) => (
               <ItemLista
@@ -361,4 +396,11 @@ const styles = StyleSheet.create({
   searchIcon: { marginRight: 8 },
   searchInput: { flex: 1, height: "100%", fontSize: 14, color: Colors.text },
   listContainer: { paddingBottom: 20 },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 40,
+  },
 });

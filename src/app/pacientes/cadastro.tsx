@@ -84,9 +84,17 @@ export default function CadastroPacienteScreen() {
         return;
       }
 
+      // Pegar ID do criador
+      let idUsuarioCriador = null;
+      const decoded = decodificarToken(token);
+      if (decoded) {
+        idUsuarioCriador = decoded.id_usuario || decoded.id || decoded.sub;
+      }
+
       // 2. Criar o "Paciente" com o `id_usuario` correto
-      await api.post("/pacientes", {
+      const pacResponse = await api.post("/pacientes", {
         id_usuario: Number(novoIdUsuario),
+        id_usuario_criador: idUsuarioCriador ? Number(idUsuarioCriador) : undefined,
         nome: form.nome,
         numero_identificacao: form.numeroIdentificacao,
         data_nascimento: converterDataParaISO(form.dataNascimento),
@@ -98,6 +106,23 @@ export default function CadastroPacienteScreen() {
         historico_medico: form.historicoMedico || null,
         alergias: form.alergias || null,
       });
+
+      // Salvar registro localmente para ALUNOs conseguirem visualizar o paciente sem tratamentos
+      const pacienteId =
+        pacResponse.data?.paciente?.id_paciente || pacResponse.data?.id_paciente;
+      if (pacienteId) {
+        try {
+          const stored = await AsyncStorage.getItem("@app-farmacia:meusPacientesCriados");
+          const meus = stored ? JSON.parse(stored) : [];
+          meus.push(String(pacienteId));
+          await AsyncStorage.setItem(
+            "@app-farmacia:meusPacientesCriados",
+            JSON.stringify(meus)
+          );
+        } catch (err) {
+          console.error("Erro ao salvar paciente localmente:", err);
+        }
+      }
 
       showNotification("success", "Paciente cadastrado com sucesso!");
       router.push("/pacientes");

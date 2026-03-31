@@ -2,6 +2,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { Plus, Search } from "lucide-react-native";
 import React, { useCallback, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   StyleSheet,
   Text,
@@ -36,17 +37,62 @@ export default function PacientesScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [userRole, setUserRole] = useState("");
+  const [userId, setUserId] = useState("");
   const router = useRouter();
   const { showNotification } = useNotification();
 
   const listarPacientes = useCallback(async (skip = 0, take = 50) => {
     try {
       setLoading(true);
+
+      const AsyncStorage = (
+        await import("@react-native-async-storage/async-storage")
+      ).default;
+      const role = (await AsyncStorage.getItem("@app-farmacia:userRole")) || "";
+      const idStr = (await AsyncStorage.getItem("@app-farmacia:userId")) || "";
+      setUserRole(role.toUpperCase());
+      setUserId(idStr);
+
       const response = await api.get("/pacientes", { params: { skip, take } });
-      const dados =
+      let dados =
         response.data.dados ||
         response.data.pacientes ||
         (Array.isArray(response.data) ? response.data : []);
+
+      if (role.toUpperCase() === "ALUNO") {
+        try {
+          const tratResponse = await api.get("/tratamentos", {
+            params: { skip: 0, take: 500 },
+          });
+          const tratamentos =
+            tratResponse.data.tratamentos ||
+            tratResponse.data.dados ||
+            (Array.isArray(tratResponse.data) ? tratResponse.data : []);
+
+          const meusPacientes = tratamentos
+            .filter((t: any) => String(t.id_usuario_criador) === String(idStr))
+            .map((t: any) => String(t.id_paciente));
+
+          // Ler também pacientes que o aluno criou neste dispositivo
+          const storedCriados = await AsyncStorage.getItem(
+            "@app-farmacia:meusPacientesCriados",
+          );
+          const meusCriadosLocal = storedCriados
+            ? JSON.parse(storedCriados)
+            : [];
+
+          dados = dados.filter(
+            (p: any) =>
+              meusPacientes.includes(String(p.id_paciente)) ||
+              meusCriadosLocal.includes(String(p.id_paciente)) ||
+              String(p.id_usuario_criador) === String(idStr),
+          );
+        } catch (e) {
+          console.error("Erro ao carregar tratamentos para filtro:", e);
+        }
+      }
+
       setPacientes(dados);
     } catch (error: any) {
       const mensagem =
@@ -149,19 +195,30 @@ export default function PacientesScreen() {
 
           <FlatList
             data={filteredPacientes}
-            keyExtractor={(item) => item.id_paciente || ""}
+            keyExtractor={(item, index) =>
+              item.id_paciente ? String(item.id_paciente) : String(index)
+            }
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContainer}
             ListEmptyComponent={
-              <Text
-                style={{
-                  textAlign: "center",
-                  color: Colors.textSecondary,
-                  marginTop: 20,
-                }}
-              >
-                Nenhum paciente encontrado.
-              </Text>
+              loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={Colors.primary} />
+                  <Text style={{ color: Colors.textSecondary, marginTop: 12 }}>
+                    Carregando pacientes...
+                  </Text>
+                </View>
+              ) : (
+                <Text
+                  style={{
+                    textAlign: "center",
+                    color: Colors.textSecondary,
+                    marginTop: 20,
+                  }}
+                >
+                  Nenhum paciente encontrado.
+                </Text>
+              )
             }
             renderItem={({ item, index }) => {
               const nomeExibir =
@@ -265,4 +322,11 @@ const styles = StyleSheet.create({
   searchIcon: { marginRight: 8 },
   searchInput: { flex: 1, height: "100%", fontSize: 14, color: Colors.text },
   listContainer: { paddingBottom: 20 },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 40,
+  },
 });

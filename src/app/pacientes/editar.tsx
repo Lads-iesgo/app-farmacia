@@ -52,10 +52,26 @@ export default function EditarPacienteScreen() {
         return;
       }
 
+      let dtNasc = "";
+      if (paciente.data_nascimento) {
+        if (
+          typeof paciente.data_nascimento === "string" &&
+          paciente.data_nascimento.includes("-")
+        ) {
+          dtNasc = paciente.data_nascimento
+            .split("T")[0]
+            .split("-")
+            .reverse()
+            .join("/");
+        } else {
+          dtNasc = paciente.data_nascimento;
+        }
+      }
+
       setForm({
         nome: paciente.usuario?.nome || paciente.nome || "",
         numero_identificacao: paciente.numero_identificacao || "",
-        data_nascimento: paciente.data_nascimento || "",
+        data_nascimento: dtNasc,
         email: paciente.email || "",
         telefone: paciente.telefone || "",
         endereco: paciente.endereco || "",

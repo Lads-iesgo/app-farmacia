@@ -2,6 +2,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { Plus, Search } from "lucide-react-native";
 import React, { useCallback, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   StyleSheet,
   Text,
@@ -51,7 +52,21 @@ export default function AdesoesScreen() {
         await import("@react-native-async-storage/async-storage")
       ).default;
       const role = (await AsyncStorage.getItem("@app-farmacia:userRole")) || "";
-      const idStr = (await AsyncStorage.getItem("@app-farmacia:userId")) || "";
+      let idStr = (await AsyncStorage.getItem("@app-farmacia:userId")) || "";
+
+      const token = await AsyncStorage.getItem("authToken");
+      if (token) {
+        try {
+          const parts = token.split(".");
+          if (parts.length === 3) {
+            const decoded = JSON.parse(atob(parts[1]));
+            idStr = String(
+              decoded?.id_usuario || decoded?.id || decoded?.sub || idStr,
+            );
+          }
+        } catch {}
+      }
+
       setUserRole(role.toUpperCase());
       setUserId(idStr);
 
@@ -91,6 +106,34 @@ export default function AdesoesScreen() {
         } else {
           adesDados = [];
         }
+      } else if (
+        role.toUpperCase() === "ALUNO" ||
+        role.toUpperCase() === "FARMACEUTICO"
+      ) {
+        const tratDados =
+          tratResponse.data.tratamentos ||
+          tratResponse.data.dados ||
+          (Array.isArray(tratResponse.data) ? tratResponse.data : []);
+
+        const meusPacientesIds = tratDados
+          .filter(
+            (t: any) =>
+              String(t.id_usuario_criador) === String(idStr) ||
+              String(t.id_farmaceutico) === String(idStr),
+          )
+          .map((t: any) => String(t.id_paciente));
+
+        // E adiciona pacientes que o usuário cadastrou manualmente
+        const storedCriados = await AsyncStorage.getItem(
+          "@app-farmacia:meusPacientesCriados",
+        );
+        const meusCriadosLocal = storedCriados ? JSON.parse(storedCriados) : [];
+
+        const todosMeusPacientes = [...meusPacientesIds, ...meusCriadosLocal];
+
+        adesDados = adesDados.filter((a: any) =>
+          todosMeusPacientes.includes(String(a.id_paciente)),
+        );
       }
 
       setAdesoes(adesDados);
@@ -198,19 +241,30 @@ export default function AdesoesScreen() {
 
           <FlatList
             data={filteredAdesoes}
-            keyExtractor={(item) => item.id_adesao || String(Math.random())}
+            keyExtractor={(item, index) =>
+              item.id_adesao ? String(item.id_adesao) : String(index)
+            }
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContainer}
             ListEmptyComponent={
-              <Text
-                style={{
-                  textAlign: "center",
-                  color: Colors.textSecondary,
-                  marginTop: 20,
-                }}
-              >
-                Nenhuma adesão encontrada.
-              </Text>
+              loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={Colors.primary} />
+                  <Text style={{ color: Colors.textSecondary, marginTop: 12 }}>
+                    Carregando adesões...
+                  </Text>
+                </View>
+              ) : (
+                <Text
+                  style={{
+                    textAlign: "center",
+                    color: Colors.textSecondary,
+                    marginTop: 20,
+                  }}
+                >
+                  Nenhum paciente encontrado.
+                </Text>
+              )
             }
             renderItem={({ item, index }) => {
               const paciente = pacientes.find(
@@ -331,4 +385,11 @@ const styles = StyleSheet.create({
   searchIcon: { marginRight: 8 },
   searchInput: { flex: 1, height: "100%", fontSize: 14, color: Colors.text },
   listContainer: { paddingBottom: 20 },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 40,
+  },
 });
