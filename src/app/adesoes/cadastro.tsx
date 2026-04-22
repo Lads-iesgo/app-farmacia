@@ -87,18 +87,19 @@ export default function CadastroAdesaoScreen() {
         ).default;
         const role =
           (await AsyncStorage.getItem("@app-farmacia:userRole")) || "";
-        let idStr =
-          (await AsyncStorage.getItem("@app-farmacia:userId")) || "";
-          
+        let idStr = (await AsyncStorage.getItem("@app-farmacia:userId")) || "";
+
         const token = await AsyncStorage.getItem("authToken");
         if (token) {
           try {
             const parts = token.split(".");
             if (parts.length === 3) {
               const decoded = JSON.parse(atob(parts[1]));
-              idStr = String(decoded?.id_usuario || decoded?.id || decoded?.sub || idStr);
+              idStr = String(
+                decoded?.id_usuario || decoded?.id || decoded?.sub || idStr,
+              );
             }
-          } catch {}
+          } catch { }
         }
 
         const [tratResponse, pacResponse, medResponse] = await Promise.all([
@@ -131,9 +132,14 @@ export default function CadastroAdesaoScreen() {
           } else {
             tratDados = [];
           }
-        } else if (role.toUpperCase() === "ALUNO" || role.toUpperCase() === "FARMACEUTICO") {
+        } else if (
+          role.toUpperCase() === "ALUNO" ||
+          role.toUpperCase() === "FARMACEUTICO"
+        ) {
           tratDados = tratDados.filter(
-            (t: any) => String(t.id_usuario_criador) === String(idStr) || String(t.id_farmaceutico) === String(idStr)
+            (t: any) =>
+              String(t.id_usuario_criador) === String(idStr) ||
+              String(t.id_farmaceutico) === String(idStr),
           );
         }
 
@@ -352,7 +358,6 @@ export default function CadastroAdesaoScreen() {
                 {loading ? "Registrando..." : "Registrar"}
               </Text>
             </TouchableOpacity>
-
             <TouchableOpacity
               style={styles.cancelButton}
               onPress={() => router.push("/adesoes" as any)}
@@ -418,7 +423,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     marginLeft: 12,
-    marginTop: 6, // Para alinhar com o input que tem label
+    marginTop: 6,
     alignSelf: "center",
     height: 52,
     justifyContent: "center",

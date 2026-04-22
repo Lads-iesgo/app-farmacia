@@ -89,8 +89,9 @@ export default function LoginScreen(): React.ReactNode {
     // Navega para a tela de recuperação de senha
     router.replace("/recuperar-senha" as any);
   };
+
   const handleRegister = () => {
-    // Navega para a tela de cadastro
+    // Navega para a tela de cadastro para alunos/farmacêuticos
     router.replace("/cadastro" as any);
   };
 
@@ -174,7 +175,7 @@ export default function LoginScreen(): React.ReactNode {
           </TouchableOpacity>
 
           <View style={styles.registerContainer}>
-            <Text style={styles.registerText}>Não tem uma conta? </Text>
+            <Text style={styles.registerText}>É aluno? </Text>
             <Text style={styles.registerLink} onPress={handleRegister}>
               Cadastre-se
             </Text>

@@ -189,7 +189,7 @@ export default function AdesoesScreen() {
   };
 
   const filteredAdesoes = adesoes.filter((a) => {
-    // Search mostly by Date or Status or any context related
+    // mostrar contexto e dados dos pacientes
     const paciente = pacientes.find((p) => p.id_paciente === a.id_paciente);
     const pacienteNome =
       (paciente as any)?.usuario?.nome || (paciente as any)?.nome || "";

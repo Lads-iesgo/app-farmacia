@@ -24,12 +24,12 @@ export default function Header({ image, onMenuPress }: HeaderProps) {
 
   return (
     <View style={styles.header}>
-      {image ? (
-        <Image source={image} style={styles.logoImage} resizeMode="contain" />
-      ) : null}
       <TouchableOpacity style={styles.menuButton} onPress={handleMenu}>
         <Menu size={28} color={Colors.white} />
       </TouchableOpacity>
+      {image ? (
+        <Image source={image} style={styles.logoImage} resizeMode="contain" />
+      ) : null}
     </View>
   );
 }
@@ -57,7 +57,6 @@ const styles = StyleSheet.create({
 
   menuButton: {
     padding: 8,
-    marginRight: -8,
-    marginLeft: "auto",
+    marginLeft: -8,
   },
 });

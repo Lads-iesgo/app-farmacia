@@ -1,4 +1,3 @@
-import { Picker } from "@react-native-picker/picker";
 import { useRouter } from "expo-router";
 import { Lock, Mail, Phone, User } from "lucide-react-native";
 import React from "react";
@@ -25,7 +24,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = React.useState("");
   const [senha, setSenha] = React.useState("");
   const [confirmarSenha, setConfirmarSenha] = React.useState("");
-  const [tipoUsuario, setTipoUsuario] = React.useState("PACIENTE");
+  const [tipoUsuario, setTipoUsuario] = React.useState("ALUNO");
   const [telefone, setTelefone] = React.useState("");
   const [carregando, setCarregando] = React.useState(false);
 
@@ -72,6 +71,41 @@ export default function RegisterScreen() {
       };
 
       const response = await api.post("/auth/registrar", cadastro);
+
+      // Injeta o cadastro como Farmacêutico para o Coordenador visualizar e para ele poder se selecionar nos tratamentos
+      if (tipoUsuario === "ALUNO") {
+        try {
+          // A rota de farmacêuticos é protegida, então fazemos um login silencioso para pegar o token provisório
+          const loginResp = await api.post("/auth/login", {
+            email: email.trim(),
+            senha: senha,
+          });
+          const tempToken =
+            loginResp.data?.token ||
+            loginResp.data?.accessToken ||
+            loginResp.data?.data?.token;
+
+          if (tempToken) {
+            await api.post(
+              "/farmaceuticos",
+              {
+                nome: nome.trim(),
+                email: email.trim(),
+                telefone: telefone || "(00) 00000-0000",
+                especialidade: "Aluno/Farmacêutico",
+              },
+              {
+                headers: {
+                  Authorization: `Bearer ${tempToken}`,
+                },
+              },
+            );
+          }
+        } catch (err) {
+          console.error("Falha ao registrar espelho do farmacêutico:", err);
+        }
+      }
+
       showNotification("success", "Cadastro realizado com sucesso");
       router.replace("/login" as any);
     } catch (error: any) {
@@ -197,21 +231,6 @@ export default function RegisterScreen() {
                 value={confirmarSenha}
                 onChangeText={setConfirmarSenha}
               />
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Tipo de usuário</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker
-                selectedValue={tipoUsuario}
-                onValueChange={(itemValue: string) => setTipoUsuario(itemValue)}
-                style={styles.picker}
-              >
-                <Picker.Item label="COORDENADOR" value="COORDENADOR" />
-                <Picker.Item label="PACIENTE" value="PACIENTE" />
-                <Picker.Item label="ALUNO" value="ALUNO" />
-              </Picker>
             </View>
           </View>
 

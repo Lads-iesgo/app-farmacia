@@ -156,9 +156,13 @@ export default function Navbar({ visible, onClose }: NavbarProps) {
                 );
               }
               if (role === "ALUNO") {
-                return ["Tratamentos", "Pacientes", "Adesões"].includes(
-                  item.label,
-                );
+                return [
+                  "Dashboard",
+                  "Pacientes",
+                  "Medicamentos",
+                  "Tratamentos",
+                  "Adesões",
+                ].includes(item.label);
               }
               return true;
             })

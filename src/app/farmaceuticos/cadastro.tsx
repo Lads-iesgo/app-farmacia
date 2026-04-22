@@ -7,6 +7,8 @@ import {
   Text,
   TouchableOpacity,
   View,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../_components/Colors";
@@ -56,83 +58,88 @@ export default function CadastroFarmaceuticoScreen() {
     <SafeAreaView style={styles.container}>
       <Header />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={styles.pageHeader}>
-          <TouchableOpacity
-            onPress={() => router.push("/farmaceuticos")}
-            style={styles.backButton}
-          >
-            <ArrowLeft size={24} color={Colors.text} />
-          </TouchableOpacity>
-          <View>
-            <Text style={styles.pageTitle}>Cadastrar farmacêutico</Text>
-            <Text style={styles.pageSubtitle}>
-              Preencha os dados do profissional
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.formCard}>
-          <Text style={styles.formSectionTitle}>
-            Informações do farmacêutico
-          </Text>
-
-          <FormInput
-            label="Nome *"
-            placeholder="Nome completo"
-            value={form.nome}
-            onChangeText={(v) => setForm({ ...form, nome: v })}
-          />
-
-          <FormInput
-            label="Email *"
-            placeholder="email@example.com"
-            keyboardType="email-address"
-            value={form.email}
-            onChangeText={(v) => setForm({ ...form, email: v })}
-          />
-
-          <FormInput
-            label="Telefone *"
-            placeholder="(11) 99999-9999"
-            keyboardType="phone-pad"
-            value={form.telefone}
-            onChangeText={(v) =>
-              setForm({ ...form, telefone: formatarTelefone(v) })
-            }
-          />
-
-          <FormInput
-            label="Especialidade"
-            placeholder="Ex: Farmacologia"
-            value={form.especialidade}
-            onChangeText={(v) => setForm({ ...form, especialidade: v })}
-          />
-
-          <View style={styles.buttonsContainer}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.pageHeader}>
             <TouchableOpacity
-              style={[styles.submitButton, loading && styles.buttonDisabled]}
-              onPress={handleCadastrar}
-              disabled={loading}
-            >
-              <Text style={styles.submitButtonText}>
-                {loading ? "Cadastrando..." : "Cadastrar"}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.cancelButton}
               onPress={() => router.push("/farmaceuticos")}
-              disabled={loading}
+              style={styles.backButton}
             >
-              <Text style={styles.cancelButtonText}>Cancelar</Text>
+              <ArrowLeft size={24} color={Colors.text} />
             </TouchableOpacity>
+            <View>
+              <Text style={styles.pageTitle}>Cadastrar farmacêutico</Text>
+              <Text style={styles.pageSubtitle}>
+                Preencha os dados do profissional
+              </Text>
+            </View>
           </View>
-        </View>
-      </ScrollView>
+
+          <View style={styles.formCard}>
+            <Text style={styles.formSectionTitle}>
+              Informações do farmacêutico
+            </Text>
+
+            <FormInput
+              label="Nome *"
+              placeholder="Nome completo"
+              value={form.nome}
+              onChangeText={(v) => setForm({ ...form, nome: v })}
+            />
+
+            <FormInput
+              label="Email *"
+              placeholder="email@example.com"
+              keyboardType="email-address"
+              value={form.email}
+              onChangeText={(v) => setForm({ ...form, email: v })}
+            />
+
+            <FormInput
+              label="Telefone *"
+              placeholder="(11) 99999-9999"
+              keyboardType="phone-pad"
+              value={form.telefone}
+              onChangeText={(v) =>
+                setForm({ ...form, telefone: formatarTelefone(v) })
+              }
+            />
+
+            <FormInput
+              label="Especialidade"
+              placeholder="Ex: Farmacologia"
+              value={form.especialidade}
+              onChangeText={(v) => setForm({ ...form, especialidade: v })}
+            />
+
+            <View style={styles.buttonsContainer}>
+              <TouchableOpacity
+                style={[styles.submitButton, loading && styles.buttonDisabled]}
+                onPress={handleCadastrar}
+                disabled={loading}
+              >
+                <Text style={styles.submitButtonText}>
+                  {loading ? "Cadastrando..." : "Cadastrar"}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => router.push("/farmaceuticos")}
+                disabled={loading}
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

@@ -34,7 +34,18 @@
       "output": "server",
       "favicon": "./assets/images/logo-farmacia-square.png"
     },
-    "plugins": ["expo-router", "expo-web-browser"],
+    "plugins": [
+      "expo-router",
+      "expo-web-browser",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     },
@@ -43,6 +54,12 @@
       "eas": {
         "projectId": "cd5a56fe-d3ef-4132-9996-406b3f2fc095"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/cd5a56fe-d3ef-4132-9996-406b3f2fc095"
     }
   }
 }

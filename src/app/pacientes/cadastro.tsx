@@ -3,6 +3,8 @@ import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import React, { useState } from "react";
 import {
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -39,6 +41,8 @@ export default function CadastroPacienteScreen() {
 
   const [form, setForm] = useState({
     nome: "",
+    email: "",
+    senha: "",
     numeroIdentificacao: "",
     dataNascimento: "",
     genero: "",
@@ -51,8 +55,8 @@ export default function CadastroPacienteScreen() {
   });
 
   const handleCadastrar = async () => {
-    if (!form.nome || !form.numeroIdentificacao) {
-      showNotification("error", "Preencha nome e CPF");
+    if (!form.nome || !form.numeroIdentificacao || !form.email || !form.senha) {
+      showNotification("error", "Preencha nome, CPF, e-mail e senha");
       return;
     }
 
@@ -66,12 +70,10 @@ export default function CadastroPacienteScreen() {
       }
 
       // 1. Criar o "Usuario" atrelado ao Paciente no banco
-      const cpfNumeros = form.numeroIdentificacao.replace(/\D/g, "");
-
       const responseAuth = await api.post("/auth/registrar", {
         nome: form.nome,
-        email: `paciente_${cpfNumeros}@farmacia.local`, // e-mail gerado automaticamente
-        senha: `Paciente@${cpfNumeros}`, // senha padrão temporária
+        email: form.email.trim(),
+        senha: form.senha,
         tipo_usuario: "PACIENTE",
       });
 
@@ -94,7 +96,9 @@ export default function CadastroPacienteScreen() {
       // 2. Criar o "Paciente" com o `id_usuario` correto
       const pacResponse = await api.post("/pacientes", {
         id_usuario: Number(novoIdUsuario),
-        id_usuario_criador: idUsuarioCriador ? Number(idUsuarioCriador) : undefined,
+        id_usuario_criador: idUsuarioCriador
+          ? Number(idUsuarioCriador)
+          : undefined,
         nome: form.nome,
         numero_identificacao: form.numeroIdentificacao,
         data_nascimento: converterDataParaISO(form.dataNascimento),
@@ -109,15 +113,18 @@ export default function CadastroPacienteScreen() {
 
       // Salvar registro localmente para ALUNOs conseguirem visualizar o paciente sem tratamentos
       const pacienteId =
-        pacResponse.data?.paciente?.id_paciente || pacResponse.data?.id_paciente;
+        pacResponse.data?.paciente?.id_paciente ||
+        pacResponse.data?.id_paciente;
       if (pacienteId) {
         try {
-          const stored = await AsyncStorage.getItem("@app-farmacia:meusPacientesCriados");
+          const stored = await AsyncStorage.getItem(
+            "@app-farmacia:meusPacientesCriados",
+          );
           const meus = stored ? JSON.parse(stored) : [];
           meus.push(String(pacienteId));
           await AsyncStorage.setItem(
             "@app-farmacia:meusPacientesCriados",
-            JSON.stringify(meus)
+            JSON.stringify(meus),
           );
         } catch (err) {
           console.error("Erro ao salvar paciente localmente:", err);
@@ -184,132 +191,154 @@ export default function CadastroPacienteScreen() {
     <SafeAreaView style={styles.container}>
       <Header />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={styles.pageHeader}>
-          <TouchableOpacity
-            onPress={() => router.push("/pacientes")}
-            style={styles.backButton}
-          >
-            <ArrowLeft size={24} color={Colors.text} />
-          </TouchableOpacity>
-          <View>
-            <Text style={styles.pageTitle}>Cadastrar paciente</Text>
-            <Text style={styles.pageSubtitle}>
-              Preencha os dados do novo paciente
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.formCard}>
-          <Text style={styles.formSectionTitle}>Informações do paciente</Text>
-
-          <FormInput
-            label="Nome"
-            placeholder="Nome completo"
-            value={form.nome}
-            onChangeText={(v) => setForm({ ...form, nome: v })}
-          />
-
-          <FormInput
-            label="CPF *"
-            placeholder="000.000.000-00"
-            keyboardType="numeric"
-            value={form.numeroIdentificacao}
-            onChangeText={(v) =>
-              setForm({ ...form, numeroIdentificacao: formatarCpf(v) })
-            }
-          />
-
-          <FormInput
-            label="Data de Nascimento"
-            placeholder="dd/mm/aaaa"
-            keyboardType="numeric"
-            value={form.dataNascimento}
-            onChangeText={(v) =>
-              setForm({ ...form, dataNascimento: formatarDataInput(v) })
-            }
-          />
-
-          <SelectField
-            label="Gênero"
-            placeholder="Selecione o gênero"
-            value={form.genero}
-            options={generoOptions}
-            onSelect={(v: string) => setForm({ ...form, genero: v })}
-          />
-
-          <FormInput
-            label="Endereço"
-            placeholder="Rua, número, bairro"
-            value={form.endereco}
-            onChangeText={(v) => setForm({ ...form, endereco: v })}
-          />
-
-          <FormInput
-            label="Cidade"
-            placeholder="Sua cidade"
-            value={form.cidade}
-            onChangeText={(v) => setForm({ ...form, cidade: v })}
-          />
-
-          <SelectField
-            label="Estado"
-            placeholder="Selecione o estado"
-            value={form.estado}
-            options={estadosOptions}
-            onSelect={(v: string) => setForm({ ...form, estado: v })}
-          />
-
-          <FormInput
-            label="CEP"
-            placeholder="00000-000"
-            keyboardType="numeric"
-            value={form.cep}
-            onChangeText={(v) => setForm({ ...form, cep: formatarCep(v) })}
-          />
-
-          <FormInput
-            label="Histórico Médico"
-            placeholder="Doenças anteriores, etc."
-            multiline
-            style={{ height: 80, textAlignVertical: "top", paddingTop: 12 }}
-            value={form.historicoMedico}
-            onChangeText={(v) => setForm({ ...form, historicoMedico: v })}
-          />
-
-          <FormInput
-            label="Alergias"
-            placeholder="Descreva alergias conhecidas"
-            multiline
-            style={{ height: 80, textAlignVertical: "top", paddingTop: 12 }}
-            value={form.alergias}
-            onChangeText={(v) => setForm({ ...form, alergias: v })}
-          />
-
-          <View style={styles.buttonsContainer}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.pageHeader}>
             <TouchableOpacity
-              style={[styles.submitButton, loading && styles.buttonDisabled]}
-              onPress={handleCadastrar}
-              disabled={loading}
-            >
-              <Text style={styles.submitButtonText}>
-                {loading ? "Cadastrando..." : "Cadastrar"}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.cancelButton}
               onPress={() => router.push("/pacientes")}
-              disabled={loading}
+              style={styles.backButton}
             >
-              <Text style={styles.cancelButtonText}>Cancelar</Text>
+              <ArrowLeft size={24} color={Colors.text} />
             </TouchableOpacity>
+            <View>
+              <Text style={styles.pageTitle}>Cadastrar paciente</Text>
+              <Text style={styles.pageSubtitle}>
+                Preencha os dados do novo paciente
+              </Text>
+            </View>
           </View>
-        </View>
-      </ScrollView>
+
+          <View style={styles.formCard}>
+            <Text style={styles.formSectionTitle}>Informações do paciente</Text>
+
+            <FormInput
+              label="Nome *"
+              placeholder="Nome completo"
+              value={form.nome}
+              onChangeText={(v) => setForm({ ...form, nome: v })}
+            />
+
+            <FormInput
+              label="E-mail *"
+              placeholder="E-mail de acesso do paciente"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={form.email}
+              onChangeText={(v) => setForm({ ...form, email: v })}
+            />
+
+            <FormInput
+              label="Senha *"
+              placeholder="Senha de acesso"
+              secureTextEntry
+              value={form.senha}
+              onChangeText={(v) => setForm({ ...form, senha: v })}
+            />
+
+            <FormInput
+              label="CPF *"
+              placeholder="000.000.000-00"
+              keyboardType="numeric"
+              value={form.numeroIdentificacao}
+              onChangeText={(v) =>
+                setForm({ ...form, numeroIdentificacao: formatarCpf(v) })
+              }
+            />
+
+            <FormInput
+              label="Data de Nascimento"
+              placeholder="dd/mm/aaaa"
+              keyboardType="numeric"
+              value={form.dataNascimento}
+              onChangeText={(v) =>
+                setForm({ ...form, dataNascimento: formatarDataInput(v) })
+              }
+            />
+
+            <SelectField
+              label="Gênero"
+              placeholder="Selecione o gênero"
+              value={form.genero}
+              options={generoOptions}
+              onSelect={(v: string) => setForm({ ...form, genero: v })}
+            />
+
+            <FormInput
+              label="Endereço"
+              placeholder="Rua, número, bairro"
+              value={form.endereco}
+              onChangeText={(v) => setForm({ ...form, endereco: v })}
+            />
+
+            <FormInput
+              label="Cidade"
+              placeholder="Sua cidade"
+              value={form.cidade}
+              onChangeText={(v) => setForm({ ...form, cidade: v })}
+            />
+
+            <SelectField
+              label="Estado"
+              placeholder="Selecione o estado"
+              value={form.estado}
+              options={estadosOptions}
+              onSelect={(v: string) => setForm({ ...form, estado: v })}
+            />
+
+            <FormInput
+              label="CEP"
+              placeholder="00000-000"
+              keyboardType="numeric"
+              value={form.cep}
+              onChangeText={(v) => setForm({ ...form, cep: formatarCep(v) })}
+            />
+
+            <FormInput
+              label="Histórico Médico"
+              placeholder="Doenças anteriores, etc."
+              multiline
+              style={{ height: 80, textAlignVertical: "top", paddingTop: 12 }}
+              value={form.historicoMedico}
+              onChangeText={(v) => setForm({ ...form, historicoMedico: v })}
+            />
+
+            <FormInput
+              label="Alergias"
+              placeholder="Descreva alergias conhecidas"
+              multiline
+              style={{ height: 80, textAlignVertical: "top", paddingTop: 12 }}
+              value={form.alergias}
+              onChangeText={(v) => setForm({ ...form, alergias: v })}
+            />
+
+            <View style={styles.buttonsContainer}>
+              <TouchableOpacity
+                style={[styles.submitButton, loading && styles.buttonDisabled]}
+                onPress={handleCadastrar}
+                disabled={loading}
+              >
+                <Text style={styles.submitButtonText}>
+                  {loading ? "Cadastrando..." : "Cadastrar"}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => router.push("/pacientes")}
+                disabled={loading}
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

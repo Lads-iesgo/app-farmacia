@@ -2,6 +2,8 @@ import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import React, { useState } from "react";
 import {
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -56,6 +58,11 @@ export default function CadastroTratamentoScreen() {
           await import("@react-native-async-storage/async-storage")
         ).default;
         const token = await AsyncStorage.getItem("authToken");
+        const roleStr =
+          (await AsyncStorage.getItem("@app-farmacia:userRole")) || "";
+        const userRole = roleStr.toUpperCase();
+        const nomeLogado =
+          (await AsyncStorage.getItem("@app-farmacia:userName")) || "";
         let idLogado: string | null = null;
         if (token) {
           try {
@@ -87,13 +94,8 @@ export default function CadastroTratamentoScreen() {
           pacResponse.data.pacientes ||
           (Array.isArray(pacResponse.data) ? pacResponse.data : []);
 
-        // Filtra pacientes apenas feitos por este usuario ou cadastrados localmente
-        const pacientesFiltrados = allPacientes.filter(
-          (p: any) =>
-            String(p.id_usuario_criador) === String(idLogado) ||
-            meusCriadosLocal.includes(String(p.id_paciente)),
-        );
-        setPacientes(pacientesFiltrados);
+        // Mostra todos os pacientes, permitindo buscar aqueles que se auto-cadastraram
+        setPacientes(allPacientes);
 
         setMedicamentos(
           medResponse.data.medicamentos ||
@@ -106,21 +108,38 @@ export default function CadastroTratamentoScreen() {
           farmResponse.data.dados ||
           (Array.isArray(farmResponse.data) ? farmResponse.data : []);
 
-        // Filtra farmaceuticos para aparecer apenas o proprio usuario logado
-        const farmaceuticosFiltrados = allFarmaceuticos.filter(
-          (f: any) =>
-            String(f.id_usuario) === String(idLogado) ||
-            String(f.id_farmaceutico) === String(idLogado),
-        );
-        setFarmaceuticos(farmaceuticosFiltrados);
+        // Tenta encontrar o logado para já pré-selecionar e filtrar
+        const meuFarmaceutico = allFarmaceuticos.find((f: any) => {
+          const idLogadoValido = idLogado !== null && idLogado !== "";
 
-        // Se encontrou o próprio farmaceutico, já seleciona automaticamente
-        if (farmaceuticosFiltrados.length === 1) {
+          const matchUsuario =
+            idLogadoValido &&
+            f.id_usuario != null &&
+            String(f.id_usuario) === String(idLogado);
+
+          const matchNome = Boolean(
+            f.nome &&
+            nomeLogado &&
+            f.nome.trim().toLowerCase() === nomeLogado.trim().toLowerCase(),
+          );
+
+          // Se tiver atrelado ao id de usuário OU o nome for exatamente igual
+          return matchUsuario || matchNome;
+        });
+
+        // Se for ALUNO, restringe a lista de seleção SOMENTE a ele mesmo
+        if (userRole === "ALUNO") {
+          setFarmaceuticos(meuFarmaceutico ? [meuFarmaceutico] : []);
+        } else {
+          setFarmaceuticos(allFarmaceuticos);
+        }
+
+        if (meuFarmaceutico) {
           setForm((prev) => ({
             ...prev,
             idFarmaceutico: String(
-              farmaceuticosFiltrados[0].id_farmaceutico ||
-                farmaceuticosFiltrados[0].id_usuario ||
+              meuFarmaceutico.id_farmaceutico ||
+                meuFarmaceutico.id_usuario ||
                 "",
             ),
           }));
@@ -145,6 +164,20 @@ export default function CadastroTratamentoScreen() {
         "Preencha campos obrigatórios: Paciente, Medicamento, Farmacêutico, Data e Frequência",
       );
       return;
+    }
+
+    if (form.dataFim) {
+      const inicioISO = converterDataParaISO(form.dataInicio);
+      const fimISO = converterDataParaISO(form.dataFim);
+      if (inicioISO && fimISO) {
+        if (new Date(fimISO) <= new Date(inicioISO)) {
+          showNotification(
+            "error",
+            "Data de término deve ser posterior à data de início",
+          );
+          return;
+        }
+      }
     }
 
     setLoading(true);
@@ -227,126 +260,135 @@ export default function CadastroTratamentoScreen() {
     <SafeAreaView style={styles.container}>
       <Header />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={styles.pageHeader}>
-          <TouchableOpacity
-            onPress={() => router.push("/tratamentos")}
-            style={styles.backButton}
-          >
-            <ArrowLeft size={24} color={Colors.text} />
-          </TouchableOpacity>
-          <View>
-            <Text style={styles.pageTitle}>Adicionar tratamento</Text>
-            <Text style={styles.pageSubtitle}>
-              Preencha os dados do novo tratamento
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.formCard}>
-          <Text style={styles.formSectionTitle}>Informações do tratamento</Text>
-
-          <SelectField
-            label="Paciente"
-            placeholder="Selecione o paciente"
-            value={form.idPaciente}
-            options={pacientesOptions}
-            onSelect={(val) => setForm({ ...form, idPaciente: val })}
-            required
-          />
-
-          <SelectField
-            label="Medicamento *"
-            placeholder="Selecione o medicamento"
-            value={form.idMedicamento}
-            options={medicamentosOptions}
-            onSelect={(val) => setForm({ ...form, idMedicamento: val })}
-            required
-          />
-
-          <SelectField
-            label="Farmacêutico *"
-            placeholder="Selecione o farmacêutico"
-            value={form.idFarmaceutico}
-            options={farmaceuticosOptions}
-            onSelect={(val) => setForm({ ...form, idFarmaceutico: val })}
-            required
-          />
-
-          <FormInput
-            label="Data de Início *"
-            placeholder="dd/mm/aaaa"
-            keyboardType="numeric"
-            maxLength={10}
-            value={form.dataInicio}
-            onChangeText={(v) =>
-              setForm({ ...form, dataInicio: formatarData(v) })
-            }
-          />
-
-          <FormInput
-            label="Frequência *"
-            placeholder="Ex: 1x ao dia, 2x ao dia"
-            value={form.frequencia}
-            onChangeText={(v) => setForm({ ...form, frequencia: v })}
-          />
-
-          <FormInput
-            label="Data de Término"
-            placeholder="dd/mm/aaaa"
-            keyboardType="numeric"
-            maxLength={10}
-            value={form.dataFim}
-            onChangeText={(v) => setForm({ ...form, dataFim: formatarData(v) })}
-          />
-
-          <FormInput
-            label="Dosagem Prescrita"
-            placeholder="Ex: 500mg, 1 comprimido"
-            value={form.dosagem}
-            onChangeText={(v) => setForm({ ...form, dosagem: v })}
-          />
-
-          <FormInput
-            label="Motivo do Tratamento"
-            placeholder="Razão do tratamento"
-            value={form.motivo}
-            onChangeText={(v) => setForm({ ...form, motivo: v })}
-          />
-
-          <FormInput
-            label="Instruções Especiais"
-            placeholder="Ex: Tomar com alimento"
-            multiline
-            style={{ height: 80, textAlignVertical: "top", paddingTop: 12 }}
-            value={form.instrucoes}
-            onChangeText={(v) => setForm({ ...form, instrucoes: v })}
-          />
-
-          <View style={styles.buttonsContainer}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.pageHeader}>
             <TouchableOpacity
-              style={[styles.submitButton, loading && styles.buttonDisabled]}
-              onPress={handleCadastrar}
-              disabled={loading}
-            >
-              <Text style={styles.submitButtonText}>
-                {loading ? "Cadastrando..." : "Adicionar"}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.cancelButton}
               onPress={() => router.push("/tratamentos")}
-              disabled={loading}
+              style={styles.backButton}
             >
-              <Text style={styles.cancelButtonText}>Cancelar</Text>
+              <ArrowLeft size={24} color={Colors.text} />
             </TouchableOpacity>
+            <View>
+              <Text style={styles.pageTitle}>Adicionar tratamento</Text>
+              <Text style={styles.pageSubtitle}>
+                Preencha os dados do novo tratamento
+              </Text>
+            </View>
           </View>
-        </View>
-      </ScrollView>
+
+          <View style={styles.formCard}>
+            <Text style={styles.formSectionTitle}>
+              Informações do tratamento
+            </Text>
+
+            <SelectField
+              label="Paciente"
+              placeholder="Selecione o paciente"
+              value={form.idPaciente}
+              options={pacientesOptions}
+              onSelect={(val) => setForm({ ...form, idPaciente: val })}
+              required
+            />
+
+            <SelectField
+              label="Medicamento"
+              placeholder="Selecione o medicamento"
+              value={form.idMedicamento}
+              options={medicamentosOptions}
+              onSelect={(val) => setForm({ ...form, idMedicamento: val })}
+              required
+            />
+
+            <SelectField
+              label="Farmacêutico"
+              placeholder="Selecione o farmacêutico"
+              value={form.idFarmaceutico}
+              options={farmaceuticosOptions}
+              onSelect={(val) => setForm({ ...form, idFarmaceutico: val })}
+              required
+            />
+
+            <FormInput
+              label="Data de Início *"
+              placeholder="dd/mm/aaaa"
+              keyboardType="numeric"
+              maxLength={10}
+              value={form.dataInicio}
+              onChangeText={(v) =>
+                setForm({ ...form, dataInicio: formatarData(v) })
+              }
+            />
+
+            <FormInput
+              label="Frequência *"
+              placeholder="Ex: 1x ao dia, 2x ao dia"
+              value={form.frequencia}
+              onChangeText={(v) => setForm({ ...form, frequencia: v })}
+            />
+
+            <FormInput
+              label="Data de Término"
+              placeholder="dd/mm/aaaa"
+              keyboardType="numeric"
+              maxLength={10}
+              value={form.dataFim}
+              onChangeText={(v) =>
+                setForm({ ...form, dataFim: formatarData(v) })
+              }
+            />
+
+            <FormInput
+              label="Dosagem Prescrita"
+              placeholder="Ex: 500mg, 1 comprimido"
+              value={form.dosagem}
+              onChangeText={(v) => setForm({ ...form, dosagem: v })}
+            />
+
+            <FormInput
+              label="Motivo do Tratamento"
+              placeholder="Razão do tratamento"
+              value={form.motivo}
+              onChangeText={(v) => setForm({ ...form, motivo: v })}
+            />
+
+            <FormInput
+              label="Instruções Especiais"
+              placeholder="Ex: Tomar com alimento"
+              multiline
+              style={{ height: 80, textAlignVertical: "top", paddingTop: 12 }}
+              value={form.instrucoes}
+              onChangeText={(v) => setForm({ ...form, instrucoes: v })}
+            />
+
+            <View style={styles.buttonsContainer}>
+              <TouchableOpacity
+                style={[styles.submitButton, loading && styles.buttonDisabled]}
+                onPress={handleCadastrar}
+                disabled={loading}
+              >
+                <Text style={styles.submitButtonText}>
+                  {loading ? "Cadastrando..." : "Adicionar"}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => router.push("/tratamentos")}
+                disabled={loading}
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
