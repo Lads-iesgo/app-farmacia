@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "app-farmacia",
+    "slug": "app-farmacia",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/logo-farmacia-square.png",
+    "scheme": "appfarmacia",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/logo-farmacia-square.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.appfarmacia",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/images/logo-farmacia-square.png",
+        "backgroundImage": "",
+        "monochromeImage": ""
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.appfarmacia"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "server",
+      "favicon": "./assets/images/logo-farmacia-square.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-web-browser",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "cd5a56fe-d3ef-4132-9996-406b3f2fc095"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/cd5a56fe-d3ef-4132-9996-406b3f2fc095"
+    }
+  }
+}
