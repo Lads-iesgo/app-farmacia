@@ -352,7 +352,7 @@ export default function CadastroTratamentoScreen() {
             />
 
             <FormInput
-              label="Motivo do Tratamento"
+              label="MOTIVO DO TRATAMENTO - SINTOMA"
               placeholder="Razão do tratamento"
               value={form.motivo}
               onChangeText={(v) => setForm({ ...form, motivo: v })}
