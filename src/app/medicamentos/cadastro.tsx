@@ -13,6 +13,7 @@ import { Colors } from "../_components/Colors";
 import FormInput from "../_components/FormInput";
 import Header from "../_components/Header";
 import { useNotification } from "../_components/NotificationContext";
+import SelectField from "../_components/Select";
 import api from "../services/api";
 
 export default function CadastroMedicamentoScreen() {
@@ -26,6 +27,16 @@ export default function CadastroMedicamentoScreen() {
     apresentacao: "",
     descricao: "",
   });
+
+  const apresentacaoOptions = [
+    { label: "Comprimido", value: "Comprimido" },
+    { label: "Cápsula", value: "Cápsula" },
+    { label: "Xarope", value: "Xarope" },
+    { label: "Gotas", value: "Gotas" },
+    { label: "Pomada/Creme", value: "Pomada/Creme" },
+    { label: "Injetável", value: "Injetável" },
+    { label: "Outro", value: "Outro" },
+  ];
 
   const handleCadastrar = async () => {
     if (
@@ -97,11 +108,12 @@ export default function CadastroMedicamentoScreen() {
             onChangeText={(v) => setForm({ ...form, dosagem: v })}
           />
 
-          <FormInput
+          <SelectField
             label="Apresentação"
             placeholder="Ex: Comprimido, Cápsula, Xarope"
             value={form.apresentacao}
-            onChangeText={(v) => setForm({ ...form, apresentacao: v })}
+            options={apresentacaoOptions}
+            onSelect={(v: string) => setForm({ ...form, apresentacao: v })}
           />
 
           <FormInput

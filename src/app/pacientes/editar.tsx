@@ -126,11 +126,16 @@ export default function EditarPacienteScreen() {
       showNotification("success", "Paciente atualizado com sucesso!");
       router.push("/pacientes");
     } catch (error: any) {
-      const mensagem =
+      let mensagem =
         error.response?.data?.erro ||
         error.response?.data?.message ||
         error.message ||
         "Falha ao atualizar paciente";
+        
+      if (mensagem === "CPF") {
+        mensagem = "CPF inválido";
+      }
+      
       showNotification("error", mensagem);
     } finally {
       setLoading(false);

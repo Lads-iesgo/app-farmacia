@@ -99,7 +99,7 @@ export default function CadastroAdesaoScreen() {
                 decoded?.id_usuario || decoded?.id || decoded?.sub || idStr,
               );
             }
-          } catch { }
+          } catch {}
         }
 
         const [tratResponse, pacResponse, medResponse] = await Promise.all([
@@ -293,7 +293,7 @@ export default function CadastroAdesaoScreen() {
           <Text style={styles.formSectionTitle}>Detalhes da adesão</Text>
 
           <SelectField
-            label="Tratamento *"
+            label="Paciente / Medicação"
             placeholder="Selecione o tratamento"
             value={form.id_tratamento}
             options={tratamentosOptions}

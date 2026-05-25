@@ -243,8 +243,8 @@ export default function EditarTratamentoScreen() {
           />
 
           <FormInput
-            label="Motivo"
-            placeholder="Motivo do tratamento"
+            label="Motivo do Tratamento - Sintoma"
+            placeholder="Razão do tratamento / Sintoma"
             value={form.motivo}
             onChangeText={(v) => setForm({ ...form, motivo: v })}
           />

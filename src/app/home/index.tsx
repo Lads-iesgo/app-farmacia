@@ -58,19 +58,34 @@ export default function HomeScreen() {
   ];
 
   const ultimosSeisMeses = Array.from({ length: 6 }, (_, index) => {
-    const data = new Date();
-    data.setDate(1);
-    data.setMonth(data.getMonth() - (5 - index));
+    const agora = new Date();
+    // Usa UTC para evitar problemas de timezone ao calcular meses
+    const ano = agora.getUTCFullYear();
+    const mes = agora.getUTCMonth(); // 0-indexed
+    const totalMeses = ano * 12 + mes - (5 - index);
+    const anoAlvo = Math.floor(totalMeses / 12);
+    const mesAlvo = totalMeses % 12; // 0-indexed
     return {
-      mes: data.getMonth(),
-      ano: data.getFullYear(),
-      label: nomesMeses[data.getMonth()],
+      mes: mesAlvo,
+      ano: anoAlvo,
+      label: nomesMeses[mesAlvo],
     };
   });
 
   const dadosGrafico = ultimosSeisMeses.map((periodo) => {
     const total = tratamentos.filter((tratamento) => {
-      const dataInicio = parseData(tratamento.data_inicio || "");
+      const raw = tratamento.data_inicio || "";
+      if (!raw) return false;
+      // Extrai mês e ano direto da string ISO ("2026-03-15..." ou "2026-03-15")
+      // para evitar o bug de UTC→local que desloca o mês
+      const match = raw.match(/^(\d{4})-(\d{2})/);
+      if (match) {
+        const anoTrat = parseInt(match[1], 10);
+        const mesTrat = parseInt(match[2], 10) - 1; // converte para 0-indexed
+        return mesTrat === periodo.mes && anoTrat === periodo.ano;
+      }
+      // Fallback para parseData (datas no formato DD/MM/YYYY)
+      const dataInicio = parseData(raw);
       if (!dataInicio) return false;
       return (
         dataInicio.getMonth() === periodo.mes &&
@@ -89,8 +104,11 @@ export default function HomeScreen() {
   // Medicamentos mais utilizados (baseado no uso em tratamentos)
   const usosPorMedicamento = tratamentos.reduce<Record<string, number>>(
     (acc, tratamento) => {
-      const chave = String(tratamento.id_medicamento || "");
-      if (!chave) return acc;
+      const t = tratamento as any;
+      const chave = String(
+        t.id_medicamento ?? t.medicamento?.id_medicamento ?? "",
+      );
+      if (!chave || chave === "undefined") return acc;
       acc[chave] = (acc[chave] || 0) + 1;
       return acc;
     },
@@ -102,11 +120,20 @@ export default function HomeScreen() {
     .slice(0, 3)
     .map(([idNormalizado, totalUsos]) => {
       const medicamentoCadastro = medicamentos.find(
-        (med) => String(med.id_medicamento) === idNormalizado,
+        (med) => String((med as any).id_medicamento) === idNormalizado,
       );
 
+      const nomeAninhado = (tratamentos as any[]).find(
+        (t) =>
+          String(t.id_medicamento ?? t.medicamento?.id_medicamento) ===
+          idNormalizado,
+      )?.medicamento?.nome_medicamento;
+
       return {
-        nome: medicamentoCadastro?.nome_medicamento || idNormalizado,
+        nome:
+          medicamentoCadastro?.nome_medicamento ||
+          nomeAninhado ||
+          `Medicamento #${idNormalizado}`,
         quantidade: `${totalUsos} uso${totalUsos > 1 ? "s" : ""}`,
         dosagem: medicamentoCadastro?.dosagem || "-",
       };
@@ -217,16 +244,25 @@ export default function HomeScreen() {
                     key={`${item.label}-${index}`}
                     style={styles.barContainer}
                   >
-                    <Text style={styles.barValue}>{item.valor}</Text>
-                    <View
-                      style={[
-                        styles.bar,
-                        {
-                          height: (item.valor / maxValor) * 120,
-                          backgroundColor: Colors.primary,
-                        },
-                      ]}
-                    />
+                    <Text style={styles.barValue}>
+                      {item.valor > 0 ? item.valor : ""}
+                    </Text>
+                    <View style={styles.barTrack}>
+                      {item.valor > 0 && (
+                        <View
+                          style={[
+                            styles.bar,
+                            {
+                              height: Math.max(
+                                4,
+                                (item.valor / maxValor) * 110,
+                              ),
+                              backgroundColor: Colors.primary,
+                            },
+                          ]}
+                        />
+                      )}
+                    </View>
                     <Text style={styles.barLabel}>{item.label}</Text>
                   </View>
                 ))}
@@ -334,10 +370,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
   },
+  barTrack: {
+    width: 32,
+    height: 110,
+    justifyContent: "flex-end",
+    backgroundColor: "#F0F4FF",
+    borderRadius: 6,
+    overflow: "hidden",
+  },
   bar: {
     width: 32,
     borderRadius: 6,
-    minHeight: 8,
   },
   barValue: {
     fontSize: 11,

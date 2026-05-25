@@ -176,7 +176,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Carregar medicamentos para API
   const loadMedicamentos = async () => {
     try {
-      const response = await api.get("/medicamentos");
+      const response = await api.get("/medicamentos", {
+        params: { skip: 0, take: 500 },
+      });
       const dados = response.data?.medicamentos || response.data?.dados || [];
       setMedicamentos(dados);
     } catch (error) {

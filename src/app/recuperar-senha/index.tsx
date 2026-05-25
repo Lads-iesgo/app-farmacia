@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import React from "react";
 import {
+  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -16,6 +17,8 @@ import api from "../services/api";
 
 export default function EsqueciSenha() {
   const [email, setEmail] = React.useState("");
+  const [emailEnviadoPara, setEmailEnviadoPara] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
   const { showNotification } = useNotification();
 
   const esquecisenha = async (emailInput: string) => {
@@ -23,15 +26,19 @@ export default function EsqueciSenha() {
       showNotification("error", "Por favor, digite seu e-mail");
       return;
     }
+    setLoading(true);
     try {
       await api.post("/auth/recuperar-senha", { email: emailInput });
-      showNotification("success", "E-mail de recuperação enviado com sucesso!");
+      setEmailEnviadoPara(emailInput);
     } catch (error: any) {
       console.error("Erro ao solicitar recuperação:", error);
       const mensagem =
+        error.response?.data?.erro ||
         error.response?.data?.error ||
         "Erro ao solicitar recuperação. Tente novamente.";
       showNotification("error", mensagem);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -49,45 +56,77 @@ export default function EsqueciSenha() {
             resizeMode="contain"
           />
 
-          <Text
-            style={styles.titulo}
-            onPress={() => router.push("/login" as any)}
-          >
-            Esqueci minha senha
-          </Text>
-          <Text style={styles.subtitulo}>
-            Digite seu e-mail para receber um link de redefinição
-          </Text>
+          {emailEnviadoPara ? (
+            <>
+              <Text style={styles.titulo}>E-mail enviado!</Text>
+              <Text style={styles.subtitulo}>
+                Um link de recuperação foi enviado para o e-mail:{"\n"}
+                <Text style={{ fontFamily: "Inter_700Bold", color: "#001F54" }}>
+                  {emailEnviadoPara}
+                </Text>
+              </Text>
+              <Text style={styles.subtitulo}>
+                Verifique sua caixa de entrada (e a pasta de spam) e siga as
+                instruções para redefinir sua senha.
+              </Text>
 
-          {/* Campo E-mail */}
-          <Text style={styles.label}>E-mail</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="seu@email.com"
-            keyboardType="email-address"
-            placeholderTextColor="#999"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-          />
+              <TouchableOpacity
+                style={styles.botao}
+                onPress={() => router.push("/login" as any)}
+              >
+                <Text style={styles.botaoTexto}>Voltar para o login</Text>
+              </TouchableOpacity>
 
-          {/* Botão Enviar */}
-          <TouchableOpacity
-            style={styles.botao}
-            onPress={() => esquecisenha(email)}
-          >
-            <Text style={styles.botaoTexto}>Enviar link de redefinição</Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.botaoVoltar}
+                onPress={() => setEmailEnviadoPara("")}
+              >
+                <Text style={styles.voltarTexto}>Tentar outro e-mail</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={styles.titulo}>Esqueci minha senha</Text>
+              <Text style={styles.subtitulo}>
+                Digite seu e-mail para receber um link de redefinição
+              </Text>
 
-          {/* Botão Voltar */}
-          <TouchableOpacity style={styles.botaoVoltar}>
-            <Text
-              style={styles.voltarTexto}
-              onPress={() => router.push("/login" as any)}
-            >
-              Voltar para o login
-            </Text>
-          </TouchableOpacity>
+              {/* Campo E-mail */}
+              <Text style={styles.label}>E-mail</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="seu@email.com"
+                keyboardType="email-address"
+                placeholderTextColor="#999"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={setEmail}
+              />
+
+              {/* Botão Enviar */}
+              <TouchableOpacity
+                style={[styles.botao, loading && { opacity: 0.75 }]}
+                onPress={() => esquecisenha(email)}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFF" size="small" />
+                ) : (
+                  <Text style={styles.botaoTexto}>
+                    Enviar link de redefinição
+                  </Text>
+                )}
+              </TouchableOpacity>
+
+              {/* Botão Voltar */}
+              <TouchableOpacity
+                style={styles.botaoVoltar}
+                onPress={() => router.push("/login" as any)}
+              >
+                <Text style={styles.voltarTexto}>Voltar para o login</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

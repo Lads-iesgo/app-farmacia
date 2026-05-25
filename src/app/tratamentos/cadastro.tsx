@@ -73,7 +73,7 @@ export default function CadastroTratamentoScreen() {
                 decoded?.id_usuario || decoded?.id || decoded?.sub || "",
               );
             }
-          } catch {}
+          } catch { }
         }
 
         const storedCriados = await AsyncStorage.getItem(
@@ -99,8 +99,8 @@ export default function CadastroTratamentoScreen() {
 
         setMedicamentos(
           medResponse.data.medicamentos ||
-            medResponse.data.dados ||
-            (Array.isArray(medResponse.data) ? medResponse.data : []),
+          medResponse.data.dados ||
+          (Array.isArray(medResponse.data) ? medResponse.data : []),
         );
 
         const allFarmaceuticos =
@@ -139,8 +139,8 @@ export default function CadastroTratamentoScreen() {
             ...prev,
             idFarmaceutico: String(
               meuFarmaceutico.id_farmaceutico ||
-                meuFarmaceutico.id_usuario ||
-                "",
+              meuFarmaceutico.id_usuario ||
+              "",
             ),
           }));
         }
@@ -196,7 +196,7 @@ export default function CadastroTratamentoScreen() {
             idUsuarioCriador =
               decoded?.id_usuario || decoded?.id || decoded?.sub;
           }
-        } catch {}
+        } catch { }
       }
 
       if (!idUsuarioCriador) {
@@ -352,8 +352,8 @@ export default function CadastroTratamentoScreen() {
             />
 
             <FormInput
-              label="Motivo do Tratamento"
-              placeholder="Razão do tratamento"
+              label="Motivo do Tratamento - Sintoma"
+              placeholder="Razão do tratamento / Sintoma"
               value={form.motivo}
               onChangeText={(v) => setForm({ ...form, motivo: v })}
             />

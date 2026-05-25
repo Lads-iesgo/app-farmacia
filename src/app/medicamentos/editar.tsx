@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../_components/Colors";
 import FormInput from "../_components/FormInput";
 import Header from "../_components/Header";
+import SelectField from "../_components/Select";
 import { useNotification } from "../_components/NotificationContext";
 import api from "../services/api";
 
@@ -27,6 +28,16 @@ export default function EditarMedicamentoScreen() {
     apresentacao: "",
     descricao: "",
   });
+
+  const apresentacaoOptions = [
+    { label: "Comprimido", value: "Comprimido" },
+    { label: "Cápsula", value: "Cápsula" },
+    { label: "Xarope", value: "Xarope" },
+    { label: "Gotas", value: "Gotas" },
+    { label: "Pomada/Creme", value: "Pomada/Creme" },
+    { label: "Injetável", value: "Injetável" },
+    { label: "Outro", value: "Outro" },
+  ];
 
   useEffect(() => {
     if (id) {
@@ -120,11 +131,12 @@ export default function EditarMedicamentoScreen() {
             onChangeText={(v) => setForm({ ...form, dosagem: v })}
           />
 
-          <FormInput
+          <SelectField
             label="Apresentação *"
             placeholder="Ex: Comprimido, Cápsula, Xarope"
             value={form.apresentacao}
-            onChangeText={(v) => setForm({ ...form, apresentacao: v })}
+            options={apresentacaoOptions}
+            onSelect={(v: string) => setForm({ ...form, apresentacao: v })}
           />
 
           <FormInput

@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import React, { useState } from "react";
@@ -21,6 +22,7 @@ import {
   converterDataParaISO,
   formatarCpf,
   formatarDataInput,
+  validarCPF,
 } from "../_utils/formatters";
 import api from "../services/api";
 
@@ -57,6 +59,11 @@ export default function CadastroPacienteScreen() {
   const handleCadastrar = async () => {
     if (!form.nome || !form.numeroIdentificacao || !form.email || !form.senha) {
       showNotification("error", "Preencha nome, CPF, e-mail e senha");
+      return;
+    }
+
+    if (!validarCPF(form.numeroIdentificacao)) {
+      showNotification("error", "CPF inválido");
       return;
     }
 
@@ -134,11 +141,16 @@ export default function CadastroPacienteScreen() {
       showNotification("success", "Paciente cadastrado com sucesso!");
       router.push("/pacientes");
     } catch (error: any) {
-      const mensagem =
+      let mensagem =
         error.response?.data?.erro ||
         error.response?.data?.message ||
         error.message ||
         "Falha ao cadastrar paciente";
+
+      if (mensagem === "CPF") {
+        mensagem = "CPF inválido";
+      }
+
       console.error("❌ Erro:", mensagem);
       showNotification("error", mensagem);
     } finally {
@@ -181,6 +193,28 @@ export default function CadastroPacienteScreen() {
     { label: "Sergipe", value: "SE" },
     { label: "Tocantins", value: "TO" },
   ];
+
+  const buscarCep = async (cepStr: string) => {
+    const numeroCep = cepStr.replace(/\D/g, "");
+    if (numeroCep.length === 8) {
+      try {
+        const resp = await axios.get(
+          `https://viacep.com.br/ws/${numeroCep}/json/`,
+        );
+        if (resp.data && !resp.data.erro) {
+          let ufObj = estadosOptions.find((e) => e.value === resp.data.uf);
+          setForm((prev) => ({
+            ...prev,
+            endereco: `${resp.data.logradouro}${resp.data.bairro ? ", " + resp.data.bairro : ""}`,
+            cidade: resp.data.localidade || prev.cidade,
+            estado: ufObj ? ufObj.value : prev.estado,
+          }));
+        }
+      } catch (e) {
+        console.error("Erro ao buscar CEP:", e);
+      }
+    }
+  };
 
   const formatarCep = (valor: string) => {
     const numeros = valor.replace(/\D/g, "").slice(0, 8);
@@ -270,6 +304,20 @@ export default function CadastroPacienteScreen() {
             />
 
             <FormInput
+              label="CEP"
+              placeholder="00000-000"
+              keyboardType="numeric"
+              value={form.cep}
+              onChangeText={(v) => {
+                const formatado = formatarCep(v);
+                setForm({ ...form, cep: formatado });
+                if (formatado.replace(/\D/g, "").length === 8) {
+                  buscarCep(formatado);
+                }
+              }}
+            />
+
+            <FormInput
               label="Endereço"
               placeholder="Rua, número, bairro"
               value={form.endereco}
@@ -289,14 +337,6 @@ export default function CadastroPacienteScreen() {
               value={form.estado}
               options={estadosOptions}
               onSelect={(v: string) => setForm({ ...form, estado: v })}
-            />
-
-            <FormInput
-              label="CEP"
-              placeholder="00000-000"
-              keyboardType="numeric"
-              value={form.cep}
-              onChangeText={(v) => setForm({ ...form, cep: formatarCep(v) })}
             />
 
             <FormInput
