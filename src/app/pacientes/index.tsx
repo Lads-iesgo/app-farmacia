@@ -74,7 +74,6 @@ export default function PacientesScreen() {
             .filter((t: any) => String(t.id_usuario_criador) === String(idStr))
             .map((t: any) => String(t.id_paciente));
 
-          // Ler também pacientes que o aluno criou neste dispositivo
           const storedCriados = await AsyncStorage.getItem(
             "@app-farmacia:meusPacientesCriados",
           );
@@ -86,7 +85,7 @@ export default function PacientesScreen() {
             (p: any) =>
               meusPacientes.includes(String(p.id_paciente)) ||
               meusCriadosLocal.includes(String(p.id_paciente)) ||
-              String(p.id_usuario_criador) === String(idStr),
+              String(p.usuario?.id_usuario) === String(idStr),
           );
         } catch (e) {
           console.error("Erro ao carregar tratamentos para filtro:", e);

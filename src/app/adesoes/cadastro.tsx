@@ -42,25 +42,47 @@ try {
 const extrairHorasFrequencia = (freq: string): number | null => {
   if (!freq) return null;
   const lower = freq.toLowerCase();
-  // 1x, 2x, etc
-  if (lower.includes("1x") || lower.includes("uma vez")) return 24;
-  if (lower.includes("2x") || lower.includes("duas vezes")) return 12;
-  if (
-    lower.includes("3x") ||
-    lower.includes("tres vezes") ||
-    lower.includes("três vezes")
-  )
-    return 8;
-  if (lower.includes("4x") || lower.includes("quatro vezes")) return 6;
 
-  const match = freq.match(/\d+/);
-  if (match) {
-    const num = parseInt(match[0], 10);
-    if (num > 0 && lower.includes("vezes")) {
-      return 24 / num; // ex: 2 vezes ao dia -> 12
-    }
-    return num; // ex: 8 em 8 -> 8
+  // 1. Tenta encontrar padrão "de 8 em 8" ou "8/8"
+  const matchEm = lower.match(/(\d+)\s*(?:em|\/)\s*(\d+)/);
+  if (matchEm) {
+    const horas = parseInt(matchEm[1], 10);
+    if (horas > 0) return horas;
   }
+
+  // 2. Tenta encontrar padrão com a palavra "hora", "horas" ou "h"
+  const matchHoras = lower.match(/(\d+)\s*(?:horas|hora|h\b)/);
+  if (matchHoras) {
+    const horas = parseInt(matchHoras[1], 10);
+    if (horas > 0) return horas;
+  }
+
+  // 3. Tenta encontrar padrão de vezes ao dia (ex: 3x, 3 vezes)
+  const matchVezes = lower.match(/(\d+)\s*(?:vezes|x\b)/);
+  if (matchVezes) {
+    const vezes = parseInt(matchVezes[1], 10);
+    if (vezes > 0) return Math.floor(24 / vezes);
+  }
+
+  // 4. Textos escritos por extenso comuns
+  if (
+    lower.includes("uma vez") ||
+    lower.includes("diario") ||
+    lower.includes("diário")
+  )
+    return 24;
+  if (lower.includes("duas vezes")) return 12;
+  if (lower.includes("tres vezes") || lower.includes("três vezes")) return 8;
+  if (lower.includes("quatro vezes")) return 6;
+
+  // 5. Último recurso: pega qualquer número e assume como intervalo,
+  // mas ignora "1" solto para evitar pegar "1 comprimido" como sendo "1 hora"
+  const matchNumero = lower.match(/\b(\d+)\b/);
+  if (matchNumero) {
+    const num = parseInt(matchNumero[1], 10);
+    if (num > 1) return num;
+  }
+
   return null;
 };
 

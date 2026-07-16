@@ -60,6 +60,10 @@ export default function LoginScreen(): React.ReactNode {
             tipoRaw.charAt(0).toUpperCase() + tipoRaw.slice(1).toLowerCase();
           await AsyncStorage.setItem("@app-farmacia:userName", nome);
           await AsyncStorage.setItem("@app-farmacia:userRole", permissao);
+          const userId = usuario.id_usuario || usuario.id;
+          if (userId) {
+            await AsyncStorage.setItem("@app-farmacia:userId", String(userId));
+          }
         }
       } else {
         showNotification(
