@@ -1,3 +1,4 @@
+// Importações de armazenamento local e dependências do React
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
   createContext,
@@ -10,29 +11,37 @@ import { TextInputProps } from "react-native";
 import { useNotification } from "../_components/NotificationContext";
 import api from "../services/api";
 
+// ─── Chaves de armazenamento local (AsyncStorage) ─────────────────────────────
+// Cada constante representa a chave usada para persistir dados no dispositivo
 const TRATAMENTOS_STORAGE_KEY = "@app-farmacia:tratamentos";
 const ADESOES_STORAGE_KEY = "@app-farmacia:adesoes";
 const MEDICAMENTOS_STORAGE_KEY = "@app-farmacia:medicamentos";
 const PACIENTES_STORAGE_KEY = "@app-farmacia:pacientes";
 const USER_ID_STORAGE_KEY = "@app-farmacia:userId";
 
+// ─── Interfaces de Props dos Componentes Reutilizáveis ────────────────────────
+
+/** Props do cabeçalho da aplicação */
 export interface HeaderProps {
   title?: string;
   image?: string;
   logoImage?: string;
 }
 
+/** Props do botão genérico reutilizável */
 export interface ButtonProps {
   title: string;
   onPress?: () => void;
   disabled?: boolean;
 }
 
+/** Props do campo de entrada de texto, estende TextInputProps do React Native */
 export interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
 }
 
+/** Props do menu de navegação lateral */
 export interface MenuProps {
   onDashboardPress?: () => void;
   onFarmaceuticosPress?: () => void;
@@ -41,27 +50,23 @@ export interface MenuProps {
   onTratamentosPress?: () => void;
 }
 
-export interface InputProps extends TextInputProps {
-  label?: string;
-  error?: string;
-}
+// ─── Interfaces de Domínio (Entidades do Sistema) ────────────────────────────
 
-export interface HeaderProps {
-  title?: string;
-  image?: string;
-  logoImage?: string;
-}
-
+/** Representa uma adesão ao medicamento por parte do paciente */
 export interface Adesao {
   id_adesao?: string;
   id_tratamento: string;
   id_paciente: string;
+  /** Data em que a dose estava prevista para ser tomada */
   data_prevista: string;
+  /** Data real em que a dose foi tomada (opcional) */
   data_tomada?: string;
+  /** Status da adesão: "tomado", "pendente", etc. */
   status?: string;
   observacoes?: string;
 }
 
+/** Representa um medicamento cadastrado no sistema */
 export interface Medicamento {
   id_medicamento?: string;
   nome_medicamento: string;
@@ -73,11 +78,14 @@ export interface Medicamento {
   data_validade: string;
   descricao: string;
   efeitos_colaterais: string;
+  /** Indica se o medicamento está ativo no sistema */
   ativo?: boolean;
 }
 
+/** Representa um paciente cadastrado no sistema */
 export interface Paciente {
   id_paciente?: string;
+  /** ID do usuário vinculado ao paciente */
   id_usuario?: string;
   numero_identificacao: string;
   data_nascimento?: string;
@@ -90,12 +98,15 @@ export interface Paciente {
   alergias?: string;
 }
 
+/** Representa um tratamento médico prescrito a um paciente */
 export interface Tratamento {
   id_tratamento?: string;
   id_paciente: string;
   id_medicamento: string;
+  /** ID do usuário (farmacêutico/aluno) que criou o tratamento */
   id_usuario_criador?: string;
   data_inicio: string;
+  /** Frequência de uso do medicamento (ex: "de 8 em 8 horas") */
   frequencia: string;
   data_fim?: string;
   dosagem_prescrita?: string;
@@ -103,24 +114,30 @@ export interface Tratamento {
   instrucoes_especiais?: string;
 }
 
+// ─── Tipagem do Contexto Global da Aplicação ─────────────────────────────────
+// Define todas as propriedades e funções disponíveis globalmente via Context API
 type AppContextType = {
   userId: string | null;
   setUserId: (id: string) => void;
+  // Estado e operações de medicamentos
   medicamentos: Medicamento[];
   addMedicamento: (item: Medicamento) => Promise<void>;
   updateMedicamento: (id: string, item: Medicamento) => Promise<void>;
   deleteMedicamento: (id: string) => Promise<void>;
   loadMedicamentos: () => Promise<void>;
+  // Estado e operações de pacientes
   pacientes: Paciente[];
   addPaciente: (item: Paciente) => Promise<void>;
   updatePaciente: (id: string, item: Paciente) => Promise<void>;
   deletePaciente: (id: string) => Promise<void>;
   loadPacientes: () => Promise<void>;
+  // Estado e operações de tratamentos
   tratamentos: Tratamento[];
   addTratamento: (item: Tratamento) => Promise<void>;
   updateTratamento: (id: string, item: Tratamento) => Promise<void>;
   deleteTratamento: (id: string) => Promise<void>;
   loadTratamentos: () => Promise<void>;
+  // Estado e operações de adesões
   adesoes: Adesao[];
   addAdesao: (item: Adesao) => Promise<void>;
   updateAdesao: (id: string, item: Adesao) => Promise<void>;
@@ -128,18 +145,22 @@ type AppContextType = {
   loadAdesoes: () => Promise<void>;
 };
 
+// Criação do contexto com valor inicial indefinido (garante uso dentro do Provider)
 export const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// ─── Provider Principal da Aplicação ─────────────────────────────────────────
+// Encapsula toda a lógica de estado global e expõe via Context API
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { showNotification } = useNotification();
 
+  // Estados globais da aplicação
   const [userId, setUserIdState] = useState<string | null>(null);
   const [medicamentos, setMedicamentos] = useState<Medicamento[]>([]);
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [tratamentos, setTratamentos] = useState<Tratamento[]>([]);
   const [adesoes, setAdesoes] = useState<Adesao[]>([]);
 
-  // Load userId from storage on mount
+  // Recupera o ID do usuário salvo localmente ao inicializar o app
   useEffect(() => {
     const loadUserId = async () => {
       try {
@@ -154,12 +175,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     loadUserId();
   }, []);
 
+  /** Persiste o ID do usuário no estado e no armazenamento local */
   const setUserId = async (id: string) => {
     setUserIdState(id);
     await AsyncStorage.setItem(USER_ID_STORAGE_KEY, id);
   };
 
-  // Carregar todos os dados ao montar apenas se estiver autenticado
+  // Carrega todos os dados da API apenas se o usuário estiver autenticado (token presente)
   useEffect(() => {
     const carregarSeAutenticado = async () => {
       const token = await AsyncStorage.getItem("authToken");
@@ -173,12 +195,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     carregarSeAutenticado();
   }, []);
 
-  // Carregar medicamentos para API
+  // ─── Funções de Carregamento (Leitura da API) ──────────────────────────────
+
+  /** Busca a lista de medicamentos da API e atualiza o estado global */
   const loadMedicamentos = async () => {
     try {
       const response = await api.get("/medicamentos", {
         params: { skip: 0, take: 500 },
       });
+      // Suporta diferentes formatos de resposta da API
       const dados = response.data?.medicamentos || response.data?.dados || [];
       setMedicamentos(dados);
     } catch (error) {
@@ -186,7 +211,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Carregar pacientes para API
+  /** Busca a lista de pacientes da API e atualiza o estado global */
   const loadPacientes = async () => {
     try {
       const response = await api.get("/pacientes");
@@ -197,7 +222,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Carregar tratamentos para API
+  /** Busca a lista de tratamentos da API e atualiza o estado global */
   const loadTratamentos = async () => {
     try {
       const response = await api.get("/tratamentos");
@@ -208,7 +233,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Carregar adesoes para API
+  /** Busca a lista de adesões da API e atualiza o estado global */
   const loadAdesoes = async () => {
     try {
       const response = await api.get("/adesoes");
@@ -219,7 +244,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Medicamentos CRUD
+  // ─── CRUD de Medicamentos ──────────────────────────────────────────────────
+
+  /** Cadastra um novo medicamento na API e adiciona ao estado local */
   const addMedicamento = async (item: Medicamento) => {
     try {
       const response = await api.post("/medicamentos", item);
@@ -231,9 +258,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  /** Atualiza os dados de um medicamento existente na API e no estado local */
   const updateMedicamento = async (id: string, item: Medicamento) => {
     try {
       await api.put(`/medicamentos/${id}`, item);
+      // Substitui o item correspondente pelo novo, comparando ID direto ou base do ID
       setMedicamentos((prev) =>
         prev.map((m) =>
           m.id_medicamento === id || m.id_medicamento === id.split("_")[0]
@@ -248,6 +277,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  /** Remove um medicamento da API e do estado local */
   const deleteMedicamento = async (id: string) => {
     try {
       await api.delete(`/medicamentos/${id}`);
@@ -264,10 +294,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Pacientes CRUD
+  // ─── CRUD de Pacientes ─────────────────────────────────────────────────────
+
+  /** Cadastra um novo paciente vinculando ao usuário logado */
   const addPaciente = async (item: Paciente) => {
     try {
       if (!userId) throw new Error("Usuário não identificado");
+      // Injeta o ID do usuário criador no payload
       const payload = { ...item, id_usuario: userId };
       const response = await api.post("/pacientes", payload);
       setPacientes((prev) => [...prev, response.data]);
@@ -278,6 +311,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  /** Atualiza os dados de um paciente existente na API e no estado local */
   const updatePaciente = async (id: string, item: Paciente) => {
     try {
       if (!userId) throw new Error("Usuário não identificado");
@@ -295,6 +329,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  /** Remove um paciente da API e do estado local */
   const deletePaciente = async (id: string) => {
     try {
       await api.delete(`/pacientes/${id}`);
@@ -310,10 +345,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Tratamentos CRUD
+  // ─── CRUD de Tratamentos ───────────────────────────────────────────────────
+
+  /** Cadastra um novo tratamento vinculando ao usuário criador */
   const addTratamento = async (item: Tratamento) => {
     try {
       if (!userId) throw new Error("Usuário não identificado");
+      // Inclui o ID do farmacêutico/aluno que está criando o tratamento
       const payload = { ...item, id_usuario_criador: userId };
       const response = await api.post("/tratamentos", payload);
       setTratamentos((prev) => [...prev, response.data]);
@@ -324,6 +362,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  /** Atualiza os dados de um tratamento existente na API e no estado local */
   const updateTratamento = async (id: string, item: Tratamento) => {
     try {
       if (!userId) throw new Error("Usuário não identificado");
@@ -343,6 +382,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  /** Remove um tratamento da API e do estado local */
   const deleteTratamento = async (id: string) => {
     try {
       await api.delete(`/tratamentos/${id}`);
@@ -358,7 +398,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Adesoes CRUD
+  // ─── CRUD de Adesões ───────────────────────────────────────────────────────
+
+  /** Registra uma nova adesão ao tratamento */
   const addAdesao = async (item: Adesao) => {
     try {
       if (!userId) throw new Error("Usuário não identificado");
@@ -371,6 +413,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  /** Atualiza os dados de uma adesão existente na API e no estado local */
   const updateAdesao = async (id: string, item: Adesao) => {
     try {
       await api.put(`/adesoes/${id}`, item);
@@ -386,6 +429,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  /** Remove uma adesão da API e do estado local */
   const deleteAdesao = async (id: string) => {
     try {
       await api.delete(`/adesoes/${id}`);
@@ -401,6 +445,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Objeto de valor exposto pelo contexto para todos os componentes filhos
   const value: AppContextType = {
     userId,
     setUserId,
@@ -429,6 +474,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
 
+// ─── Hook Personalizado ────────────────────────────────────────────────────────
+// Facilita o acesso ao contexto e garante que seja usado dentro do AppProvider
 export const useApp = () => {
   const context = useContext(AppContext);
   if (context === undefined) {

@@ -1,4 +1,4 @@
-// Import dinâmico para expo-notifications
+// Importação dinâmica do expo-notifications para compatibilidade com Expo Go SDK 53
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import React, { useState } from "react";
@@ -23,9 +23,11 @@ import {
 } from "../_utils/formatters";
 import api from "../services/api";
 
+// Tenta carregar o módulo de notificações; falha silenciosamente no Expo Go
 let Notifications: any = null;
 try {
   Notifications = require("expo-notifications");
+  // Configura o comportamento padrão das notificações quando o app está em primeiro plano
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
@@ -39,6 +41,12 @@ try {
   console.warn("Expo Notifications ignorado no Expo Go SDK 53:", error);
 }
 
+// ─── Utilitário: Extração de Intervalo de Horas da Frequência ─────────────────
+/**
+ * Interpreta um texto de frequência e retorna o intervalo em horas.
+ * Suporta múltiplos formatos: "de 8 em 8", "8/8", "8 horas", "3x", "3 vezes", etc.
+ * Retorna null se não for possível identificar o intervalo.
+ */
 const extrairHorasFrequencia = (freq: string): number | null => {
   if (!freq) return null;
   const lower = freq.toLowerCase();
@@ -57,14 +65,14 @@ const extrairHorasFrequencia = (freq: string): number | null => {
     if (horas > 0) return horas;
   }
 
-  // 3. Tenta encontrar padrão de vezes ao dia (ex: 3x, 3 vezes)
+  // 3. Converte "vezes ao dia" para intervalo de horas (ex: 3x = 24/3 = 8h)
   const matchVezes = lower.match(/(\d+)\s*(?:vezes|x\b)/);
   if (matchVezes) {
     const vezes = parseInt(matchVezes[1], 10);
     if (vezes > 0) return Math.floor(24 / vezes);
   }
 
-  // 4. Textos escritos por extenso comuns
+  // 4. Textos por extenso: "uma vez ao dia", "diário", etc.
   if (
     lower.includes("uma vez") ||
     lower.includes("diario") ||
@@ -75,8 +83,8 @@ const extrairHorasFrequencia = (freq: string): number | null => {
   if (lower.includes("tres vezes") || lower.includes("três vezes")) return 8;
   if (lower.includes("quatro vezes")) return 6;
 
-  // 5. Último recurso: pega qualquer número e assume como intervalo,
-  // mas ignora "1" solto para evitar pegar "1 comprimido" como sendo "1 hora"
+  // 5. Último recurso: pega qualquer número maior que 1 e trata como intervalo em horas.
+  // Ignora "1" para não confundir com "1 comprimido"
   const matchNumero = lower.match(/\b(\d+)\b/);
   if (matchNumero) {
     const num = parseInt(matchNumero[1], 10);
@@ -86,31 +94,41 @@ const extrairHorasFrequencia = (freq: string): number | null => {
   return null;
 };
 
+// ─── Tela de Cadastro de Adesão ────────────────────────────────────────────────
 export default function CadastroAdesaoScreen() {
   const router = useRouter();
   const { showNotification } = useNotification();
+
+  // Listas de dados carregadas da API para popular os selects
   const [tratamentos, setTratamentos] = useState<any[]>([]);
   const [pacientes, setPacientes] = useState<any[]>([]);
   const [medicamentos, setMedicamentos] = useState<any[]>([]);
+
+  // Controle de carregamento para desabilitar o botão durante requisições
   const [loading, setLoading] = useState(false);
 
+  // Estado do formulário de adesão
   const [form, setForm] = useState({
     id_tratamento: "",
     data_prevista: "",
     data_tomada: "",
-    hora_tomada_iso: "", // Guarda o timestamp real
+    hora_tomada_iso: "", // Timestamp ISO real capturado pelo botão "Agora"
   });
 
+  // Carrega dados ao montar a tela e solicita permissão de notificação
   React.useEffect(() => {
     const carregarDados = async () => {
       try {
         const AsyncStorage = (
           await import("@react-native-async-storage/async-storage")
         ).default;
+
+        // Obtém o papel e o ID do usuário logado para filtrar os tratamentos
         const role =
           (await AsyncStorage.getItem("@app-farmacia:userRole")) || "";
         let idStr = (await AsyncStorage.getItem("@app-farmacia:userId")) || "";
 
+        // Tenta extrair o ID real do usuário a partir do JWT armazenado
         const token = await AsyncStorage.getItem("authToken");
         if (token) {
           try {
@@ -124,12 +142,14 @@ export default function CadastroAdesaoScreen() {
           } catch {}
         }
 
+        // Busca tratamentos, pacientes e medicamentos em paralelo para otimizar tempo
         const [tratResponse, pacResponse, medResponse] = await Promise.all([
           api.get("/tratamentos", { params: { skip: 0, take: 100 } }),
           api.get("/pacientes", { params: { skip: 0, take: 100 } }),
           api.get("/medicamentos", { params: { skip: 0, take: 100 } }),
         ]);
 
+        // Normaliza as respostas, pois a API pode retornar diferentes formatos
         let tratDados =
           tratResponse.data.tratamentos ||
           tratResponse.data.dados ||
@@ -143,7 +163,9 @@ export default function CadastroAdesaoScreen() {
           medResponse.data.dados ||
           (Array.isArray(medResponse.data) ? medResponse.data : []);
 
+        // Filtra os tratamentos de acordo com o papel do usuário
         if (role.toUpperCase() === "PACIENTE") {
+          // Paciente só vê seus próprios tratamentos
           const me = pacDados.find(
             (p: any) => String(p.id_usuario) === String(idStr),
           );
@@ -158,6 +180,7 @@ export default function CadastroAdesaoScreen() {
           role.toUpperCase() === "ALUNO" ||
           role.toUpperCase() === "FARMACEUTICO"
         ) {
+          // Aluno/Farmacêutico só vê tratamentos que ele criou ou é responsável
           tratDados = tratDados.filter(
             (t: any) =>
               String(t.id_usuario_criador) === String(idStr) ||
@@ -174,7 +197,7 @@ export default function CadastroAdesaoScreen() {
     };
     carregarDados();
 
-    // Solicitar permissões de notificação
+    // Solicita permissão para enviar notificações locais ao usuário
     const requestPermissions = async () => {
       if (!Notifications) return;
       try {
@@ -192,7 +215,10 @@ export default function CadastroAdesaoScreen() {
     requestPermissions();
   }, []);
 
+  // ─── Submissão do Formulário ─────────────────────────────────────────────────
+  /** Valida os campos, registra a adesão na API e agenda notificação de lembrete */
   const handleCadastrar = async () => {
+    // Validação mínima dos campos obrigatórios
     if (!form.id_tratamento || !form.data_prevista || !form.data_tomada) {
       showNotification("error", "Preencha o tratamento e as datas previstas");
       return;
@@ -200,6 +226,7 @@ export default function CadastroAdesaoScreen() {
 
     setLoading(true);
     try {
+      // Encontra o tratamento selecionado para obter dados complementares
       const tratamentoSelecionado = tratamentos.find(
         (t) => String(t.id_tratamento) === String(form.id_tratamento),
       );
@@ -210,25 +237,31 @@ export default function CadastroAdesaoScreen() {
         return;
       }
 
+      // Prioriza o timestamp ISO capturado pelo botão "Agora"; caso contrário, converte a data digitada
       const dataTomadaISO =
         form.hora_tomada_iso || converterDataParaISO(form.data_tomada);
 
+      // Monta o payload da adesão para enviar à API
       const response = {
         id_tratamento: Number(form.id_tratamento),
         id_paciente: Number(tratamentoSelecionado.id_paciente),
         data_prevista: converterDataParaISO(form.data_prevista),
         data_tomada: dataTomadaISO,
+        // Define o status com base na existência da data tomada
+        status: dataTomadaISO ? "tomado" : "pendente",
       };
 
       await api.post("/adesoes", response);
 
-      // Agendar notificação se houver frequência
+      // Agenda notificação de lembrete para a próxima dose, se houver frequência definida
       const frequenciaText = tratamentoSelecionado.frequencia || "";
       const horasFrequencia = extrairHorasFrequencia(frequenciaText);
       if (horasFrequencia && dataTomadaISO && Notifications) {
+        // Calcula o momento da próxima dose somando as horas de intervalo
         const trigger = new Date(dataTomadaISO);
         trigger.setHours(trigger.getHours() + horasFrequencia);
 
+        // Busca o nome do medicamento para exibir na notificação
         const medicamentoInfo = medicamentos.find(
           (m) =>
             String(m.id_medicamento) ===
@@ -236,6 +269,7 @@ export default function CadastroAdesaoScreen() {
         );
         const nomeMed = medicamentoInfo?.nome_medicamento || "Medicamento";
 
+        // Notificações locais não funcionam na web, apenas mobile
         if (Platform.OS !== "web") {
           await Notifications.scheduleNotificationAsync({
             content: {
@@ -254,6 +288,7 @@ export default function CadastroAdesaoScreen() {
       showNotification("success", "Adesão registrada com sucesso!");
       router.push("/adesoes" as any);
     } catch (error: any) {
+      // Extrai a mensagem de erro mais descritiva disponível na resposta
       const mensagem =
         error.response?.data?.erro ||
         error.response?.data?.message ||
@@ -266,6 +301,8 @@ export default function CadastroAdesaoScreen() {
     }
   };
 
+  // ─── Opções do Select de Tratamentos ─────────────────────────────────────────
+  // Formata os tratamentos como "Nome do Paciente - Nome do Medicamento" para exibição
   const tratamentosOptions = tratamentos.map((t: any) => {
     const paciente = pacientes.find(
       (p: any) => String(p.id_paciente) === String(t.id_paciente),
@@ -274,6 +311,7 @@ export default function CadastroAdesaoScreen() {
       (m: any) => String(m.id_medicamento) === String(t.id_medicamento),
     );
 
+    // Tenta obter o nome do paciente em diferentes formatos de resposta
     const pacienteNome =
       (paciente as any)?.usuario?.nome ||
       (paciente as any)?.nome ||
@@ -288,6 +326,7 @@ export default function CadastroAdesaoScreen() {
     };
   });
 
+  // ─── Renderização da Tela ─────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
       <Header />
@@ -296,6 +335,7 @@ export default function CadastroAdesaoScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Cabeçalho da página com botão de voltar */}
         <View style={styles.pageHeader}>
           <TouchableOpacity
             onPress={() => router.push("/adesoes" as any)}
@@ -311,9 +351,11 @@ export default function CadastroAdesaoScreen() {
           </View>
         </View>
 
+        {/* Card principal com o formulário de adesão */}
         <View style={styles.formCard}>
           <Text style={styles.formSectionTitle}>Detalhes da adesão</Text>
 
+          {/* Seletor de tratamento (exibe paciente + medicamento) */}
           <SelectField
             label="Paciente / Medicação"
             placeholder="Selecione o tratamento"
@@ -322,6 +364,7 @@ export default function CadastroAdesaoScreen() {
             onSelect={(v: string) => setForm({ ...form, id_tratamento: v })}
           />
 
+          {/* Campo de data prevista com máscara de formatação */}
           <FormInput
             label="Data Prevista *"
             placeholder="dd/mm/aaaa"
@@ -332,6 +375,7 @@ export default function CadastroAdesaoScreen() {
             }
           />
 
+          {/* Campo de data tomada com botão "Agora" para capturar o timestamp atual */}
           <View style={styles.dataTomadaContainer}>
             <View style={{ flex: 1 }}>
               <FormInput
@@ -343,11 +387,12 @@ export default function CadastroAdesaoScreen() {
                   setForm({
                     ...form,
                     data_tomada: formatarDataInput(v),
-                    hora_tomada_iso: "",
+                    hora_tomada_iso: "", // Limpa o ISO ao digitar manualmente
                   })
                 }
               />
             </View>
+            {/* Botão que preenche a data/hora atual automaticamente */}
             <TouchableOpacity
               style={styles.timeButton}
               onPress={() => {
@@ -358,7 +403,7 @@ export default function CadastroAdesaoScreen() {
                 setForm({
                   ...form,
                   data_tomada: `${diaMesAno} ${hora}:${min}`,
-                  hora_tomada_iso: agora.toISOString(),
+                  hora_tomada_iso: agora.toISOString(), // Preserva o timestamp exato
                 });
                 showNotification(
                   "success",
@@ -370,6 +415,7 @@ export default function CadastroAdesaoScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* Botões de ação: registrar e cancelar */}
           <View style={styles.buttonsContainer}>
             <TouchableOpacity
               style={[styles.submitButton, loading && styles.buttonDisabled]}
@@ -394,6 +440,7 @@ export default function CadastroAdesaoScreen() {
   );
 }
 
+// ─── Estilos da Tela ───────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   scrollContent: { padding: 20, paddingBottom: 40 },
