@@ -16,6 +16,7 @@ import Header from "../_components/Header";
 import ItemLista from "../_components/ItemLista";
 import ModalExclusao from "../_components/ModalExclusao";
 import { useNotification } from "../_components/NotificationContext";
+import { canSeeAll, canWrite, isPaciente } from "../_utils/roles";
 import api from "../services/api";
 
 const formatarData = (data: string) => {
@@ -107,9 +108,12 @@ export default function TratamentosScreen() {
         dados = dados.filter(
           (t: any) =>
             String(t.id_usuario_criador) === String(idStr) ||
-            String(t.id_farmaceutico) === String(idStr),
+            String(t.id_farmaceutico) === String(idStr) ||
+            // Caso o backend retorne o objeto farmaceutico com id_usuario
+            String(t.farmaceutico?.id_usuario) === String(idStr),
         );
       }
+      // PROFESSOR e COORDENADOR vêem todos os tratamentos sem filtro
 
       setTratamentos(dados);
       setPacientes(pacDados);
@@ -223,7 +227,8 @@ export default function TratamentosScreen() {
           </Text>
         </View>
 
-        {userRole !== "PACIENTE" && (
+        {/* Botão adicionar: oculto para COORDENADOR (só leitura) e PACIENTE */}
+        {canWrite(userRole) && (
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => router.push("/tratamentos/cadastro")}
@@ -319,12 +324,12 @@ export default function TratamentosScreen() {
                 ]}
                 isLast={index === filteredTratamentos.length - 1}
                 onEdit={
-                  userRole !== "PACIENTE"
+                  canWrite(userRole)
                     ? () => handleEditClick(String(item.id_tratamento))
                     : undefined
                 }
                 onDelete={
-                  userRole !== "PACIENTE"
+                  canWrite(userRole)
                     ? () => handleDeleteClick(String(item.id_tratamento))
                     : undefined
                 }

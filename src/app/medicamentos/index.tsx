@@ -15,6 +15,7 @@ import { Colors } from "../_components/Colors";
 import Header from "../_components/Header";
 import ItemLista from "../_components/ItemLista";
 import ModalExclusao from "../_components/ModalExclusao";
+import { canWrite } from "../_utils/roles";
 import api from "../services/api";
 
 export default function MedicamentosScreen() {
@@ -23,11 +24,18 @@ export default function MedicamentosScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState("");
   const router = useRouter();
 
   const listarMedicamentos = useCallback(async (skip = 0, take = 50) => {
     try {
       setLoading(true);
+      const AsyncStorage = (
+        await import("@react-native-async-storage/async-storage")
+      ).default;
+      const role = (await AsyncStorage.getItem("@app-farmacia:userRole")) || "";
+      setUserRole(role.toUpperCase());
+
       const response = await api.get("/medicamentos", {
         params: { skip, take },
       });
@@ -102,13 +110,16 @@ export default function MedicamentosScreen() {
           </Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => router.push("/medicamentos/cadastro")}
-        >
-          <Plus size={20} color={Colors.white} />
-          <Text style={styles.addButtonText}>Cadastrar medicamento</Text>
-        </TouchableOpacity>
+        {/* Botão adicionar: oculto para COORDENADOR (só leitura) */}
+        {canWrite(userRole) && (
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => router.push("/medicamentos/cadastro")}
+          >
+            <Plus size={20} color={Colors.white} />
+            <Text style={styles.addButtonText}>Cadastrar medicamento</Text>
+          </TouchableOpacity>
+        )}
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Lista de medicamentos</Text>
@@ -167,8 +178,8 @@ export default function MedicamentosScreen() {
                   { label: "Descrição", value: item.descricao || "N/A" },
                 ]}
                 isLast={index === filteredMedicamentos.length - 1}
-                onEdit={() => handleEditClick(String(item.id_medicamento))}
-                onDelete={() => handleDeleteClick(String(item.id_medicamento))}
+                onEdit={canWrite(userRole) ? () => handleEditClick(String(item.id_medicamento)) : undefined}
+                onDelete={canWrite(userRole) ? () => handleDeleteClick(String(item.id_medicamento)) : undefined}
               />
             )}
           />

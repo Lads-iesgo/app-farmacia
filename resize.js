@@ -13,15 +13,15 @@ async function resizeImage() {
   try {
     const image = await Jimp.read(inputPath);
 
-    // Create a new square image with white background
+    // Criar um fundo branco na imagem
     const size = Math.max(image.bitmap.width, image.bitmap.height);
     const background = new Jimp(size, size, 0xffffffff); // White background
 
-    // Calculate position to center the original image
+    // Calcular posição para centralizar a imagem original
     const x = (size - image.bitmap.width) / 2;
     const y = (size - image.bitmap.height) / 2;
 
-    // Composite the images
+    // Compor as imagens
     background.composite(image, x, y);
 
     await background.writeAsync(outputPath);

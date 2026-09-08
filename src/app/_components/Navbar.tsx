@@ -164,6 +164,7 @@ export default function Navbar({ visible, onClose }: NavbarProps) {
                   "Adesões",
                 ].includes(item.label);
               }
+              // PROFESSOR e COORDENADOR veem o menu completo
               return true;
             })
             .map((item, index) => {

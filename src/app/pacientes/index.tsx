@@ -16,6 +16,7 @@ import Header from "../_components/Header";
 import ItemLista from "../_components/ItemLista";
 import ModalExclusao from "../_components/ModalExclusao";
 import { useNotification } from "../_components/NotificationContext";
+import { canSeeAll, canWrite } from "../_utils/roles";
 import api from "../services/api";
 
 const formatarData = (data: string) => {
@@ -91,6 +92,7 @@ export default function PacientesScreen() {
           console.error("Erro ao carregar tratamentos para filtro:", e);
         }
       }
+      // PROFESSOR e COORDENADOR vêem todos os pacientes sem filtro
 
       setPacientes(dados);
     } catch (error: any) {
@@ -166,13 +168,16 @@ export default function PacientesScreen() {
           </Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => router.push("/pacientes/cadastro")}
-        >
-          <Plus size={20} color={Colors.white} />
-          <Text style={styles.addButtonText}>Cadastrar paciente</Text>
-        </TouchableOpacity>
+        {/* Botão de adicionar: oculto para COORDENADOR (só leitura) e PACIENTE */}
+        {canWrite(userRole) && (
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => router.push("/pacientes/cadastro")}
+          >
+            <Plus size={20} color={Colors.white} />
+            <Text style={styles.addButtonText}>Cadastrar paciente</Text>
+          </TouchableOpacity>
+        )}
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Lista de pacientes</Text>
@@ -250,8 +255,8 @@ export default function PacientesScreen() {
                     { label: "CEP", value: item.cep || "N/A" },
                   ]}
                   isLast={index === filteredPacientes.length - 1}
-                  onEdit={() => handleEditClick(item.id_paciente)}
-                  onDelete={() => handleDeleteClick(item.id_paciente)}
+                  onEdit={canWrite(userRole) ? () => handleEditClick(item.id_paciente) : undefined}
+                  onDelete={canWrite(userRole) ? () => handleDeleteClick(item.id_paciente) : undefined}
                 />
               );
             }}

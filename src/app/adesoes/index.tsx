@@ -17,6 +17,7 @@ import Header from "../_components/Header";
 import ItemLista from "../_components/ItemLista";
 import ModalExclusao from "../_components/ModalExclusao";
 import { useNotification } from "../_components/NotificationContext";
+import { canWrite, isCoordenador, isPaciente } from "../_utils/roles";
 import api from "../services/api";
 
 // ─── Utilitário de Formatação de Data ─────────────────────────────────────────
@@ -266,14 +267,16 @@ export default function AdesoesScreen() {
           </Text>
         </View>
 
-        {/* Botão de nova adesão: visível apenas para usuários que não são pacientes */}
-        {userRole !== "PACIENTE" && (
+        {/* Botão registrar adesão: visível para quem pode escrever OU para PACIENTE (registrar a própria adesão) */}
+        {!isCoordenador(userRole) && (
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => router.push("/adesoes/cadastro" as any)}
           >
             <Plus size={20} color={Colors.white} />
-            <Text style={styles.addButtonText}>Registrar adesão</Text>
+            <Text style={styles.addButtonText}>
+              {isPaciente(userRole) ? "Registrar adesão" : "Registrar adesão"}
+            </Text>
           </TouchableOpacity>
         )}
 
@@ -376,9 +379,9 @@ export default function AdesoesScreen() {
                     },
                   ]}
                   isLast={index === filteredAdesoes.length - 1}
-                  // Botão de exclusão disponível apenas para usuários que não são pacientes
+                  // Botão excluir: apenas para quem tem permissão de escrita (não PACIENTE, não COORDENADOR)
                   onDelete={
-                    userRole !== "PACIENTE"
+                    canWrite(userRole) && !isPaciente(userRole)
                       ? () => handleDeleteClick(String(item.id_adesao))
                       : undefined
                   }

@@ -5,6 +5,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -25,6 +26,12 @@ export default function RegisterScreen() {
   const [senha, setSenha] = React.useState("");
   const [confirmarSenha, setConfirmarSenha] = React.useState("");
   const [tipoUsuario, setTipoUsuario] = React.useState("ALUNO");
+
+  const tiposDisponiveis = [
+    { label: "Aluno", value: "ALUNO" },
+    { label: "Professor", value: "PROFESSOR" },
+    { label: "Paciente", value: "PACIENTE" },
+  ];
   const [telefone, setTelefone] = React.useState("");
   const [carregando, setCarregando] = React.useState(false);
 
@@ -72,8 +79,9 @@ export default function RegisterScreen() {
 
       const response = await api.post("/auth/registrar", cadastro);
 
-      // Injeta o cadastro como Farmacêutico para o Coordenador visualizar e para ele poder se selecionar nos tratamentos
-      if (tipoUsuario === "ALUNO") {
+      // Injeta o cadastro como Farmacêutico para ALUNO e PROFESSOR poderem ser
+      // selecionados nos tratamentos
+      if (tipoUsuario === "ALUNO" || tipoUsuario === "PROFESSOR") {
         try {
           // A rota de farmacêuticos é protegida, então fazemos um login silencioso para pegar o token provisório
           const loginResp = await api.post("/auth/login", {
@@ -92,7 +100,7 @@ export default function RegisterScreen() {
                 nome: nome.trim(),
                 email: email.trim(),
                 telefone: telefone || "(00) 00000-0000",
-                especialidade: "Aluno/Farmacêutico",
+                especialidade: tipoUsuario === "PROFESSOR" ? "Professor" : "Aluno/Farmacêutico",
               },
               {
                 headers: {
@@ -131,6 +139,11 @@ export default function RegisterScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
       >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
         <View style={styles.formContainer}>
           <View style={styles.logoContainer}>
             <Image
@@ -216,6 +229,32 @@ export default function RegisterScreen() {
             </View>
           </View>
 
+          {/* Seletor de tipo de usuário */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Tipo de usuário</Text>
+            <View style={styles.tipoContainer}>
+              {tiposDisponiveis.map((tipo) => (
+                <TouchableOpacity
+                  key={tipo.value}
+                  style={[
+                    styles.tipoButton,
+                    tipoUsuario === tipo.value && styles.tipoButtonActive,
+                  ]}
+                  onPress={() => setTipoUsuario(tipo.value)}
+                >
+                  <Text
+                    style={[
+                      styles.tipoButtonText,
+                      tipoUsuario === tipo.value && styles.tipoButtonTextActive,
+                    ]}
+                  >
+                    {tipo.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
           <View style={styles.inputGroup}>
             <View style={styles.inputWrapper}>
               <Lock
@@ -262,6 +301,7 @@ export default function RegisterScreen() {
             resizeMode="contain"
           />
         </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -404,4 +444,31 @@ const styles = StyleSheet.create({
     height: 56,
     color: Colors.text,
   },
+  tipoContainer: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  tipoButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.background,
+  },
+  tipoButtonActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  tipoButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.textSecondary,
+  },
+  tipoButtonTextActive: {
+    color: Colors.white,
+  },
 });
+

@@ -107,6 +107,10 @@ export default function CadastroAdesaoScreen() {
   // Controle de carregamento para desabilitar o botão durante requisições
   const [loading, setLoading] = useState(false);
 
+  // Papel e id do paciente logado (preenchido automaticamente para PACIENTE)
+  const [userRole, setUserRole] = useState("");
+  const [meuIdPaciente, setMeuIdPaciente] = useState<number | null>(null);
+
   // Estado do formulário de adesão
   const [form, setForm] = useState({
     id_tratamento: "",
@@ -142,6 +146,8 @@ export default function CadastroAdesaoScreen() {
           } catch {}
         }
 
+        setUserRole(role.toUpperCase());
+
         // Busca tratamentos, pacientes e medicamentos em paralelo para otimizar tempo
         const [tratResponse, pacResponse, medResponse] = await Promise.all([
           api.get("/tratamentos", { params: { skip: 0, take: 100 } }),
@@ -170,6 +176,7 @@ export default function CadastroAdesaoScreen() {
             (p: any) => String(p.id_usuario) === String(idStr),
           );
           if (me) {
+            setMeuIdPaciente(me.id_paciente);
             tratDados = tratDados.filter(
               (t: any) => String(t.id_paciente) === String(me.id_paciente),
             );
@@ -178,15 +185,17 @@ export default function CadastroAdesaoScreen() {
           }
         } else if (
           role.toUpperCase() === "ALUNO" ||
+          role.toUpperCase() === "PROFESSOR" ||
           role.toUpperCase() === "FARMACEUTICO"
         ) {
-          // Aluno/Farmacêutico só vê tratamentos que ele criou ou é responsável
+          // Aluno/Professor/Farmêceutico só vê tratamentos que ele criou ou é responsável
           tratDados = tratDados.filter(
             (t: any) =>
               String(t.id_usuario_criador) === String(idStr) ||
               String(t.id_farmaceutico) === String(idStr),
           );
         }
+        // COORDENADOR vê todos (sem filtro)
 
         setTratamentos(tratDados);
         setPacientes(pacDados);
@@ -244,11 +253,12 @@ export default function CadastroAdesaoScreen() {
       // Monta o payload da adesão para enviar à API
       const response = {
         id_tratamento: Number(form.id_tratamento),
-        id_paciente: Number(tratamentoSelecionado.id_paciente),
+        // Se for PACIENTE, usa o id_paciente dele; caso contrário, usa o do tratamento selecionado
+        id_paciente: meuIdPaciente ?? Number(tratamentoSelecionado.id_paciente),
         data_prevista: converterDataParaISO(form.data_prevista),
         data_tomada: dataTomadaISO,
         // Define o status com base na existência da data tomada
-        status: dataTomadaISO ? "tomado" : "pendente",
+        status: dataTomadaISO ? "TOMADO" : "PENDENTE",
       };
 
       await api.post("/adesoes", response);

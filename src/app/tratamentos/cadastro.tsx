@@ -127,8 +127,8 @@ export default function CadastroTratamentoScreen() {
           return matchUsuario || matchNome;
         });
 
-        // Se for ALUNO, restringe a lista de seleção SOMENTE a ele mesmo
-        if (userRole === "ALUNO") {
+        // Se for ALUNO ou PROFESSOR, restringe a lista de seleção SOMENTE a ele mesmo
+        if (userRole === "ALUNO" || userRole === "PROFESSOR") {
           setFarmaceuticos(meuFarmaceutico ? [meuFarmaceutico] : []);
         } else {
           setFarmaceuticos(allFarmaceuticos);
