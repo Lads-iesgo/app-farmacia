@@ -139,7 +139,7 @@ export default function CadastroAdesaoScreen() {
                 decoded?.id_usuario || decoded?.id || decoded?.sub || idStr,
               );
             }
-          } catch {}
+          } catch { }
         }
 
         // Busca tratamentos, pacientes e medicamentos em paralelo para otimizar tempo
@@ -248,7 +248,7 @@ export default function CadastroAdesaoScreen() {
         data_prevista: converterDataParaISO(form.data_prevista),
         data_tomada: dataTomadaISO,
         // Define o status com base na existência da data tomada
-        status: dataTomadaISO ? "tomado" : "pendente",
+        status: dataTomadaISO ? "TOMADO" : "PENDENTE",
       };
 
       await api.post("/adesoes", response);
