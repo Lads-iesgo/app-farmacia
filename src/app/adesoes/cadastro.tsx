@@ -143,7 +143,7 @@ export default function CadastroAdesaoScreen() {
                 decoded?.id_usuario || decoded?.id || decoded?.sub || idStr,
               );
             }
-          } catch {}
+          } catch { }
         }
 
         setUserRole(role.toUpperCase());

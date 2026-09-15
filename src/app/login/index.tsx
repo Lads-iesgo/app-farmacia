@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { Lock, Mail } from "lucide-react-native";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react-native";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -24,6 +24,7 @@ export default function LoginScreen(): React.ReactNode {
 
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [mostrarSenha, setMostrarSenha] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const fazerlogin = async () => {
@@ -152,8 +153,19 @@ export default function LoginScreen(): React.ReactNode {
                 onChangeText={setSenha}
                 placeholder="Senha"
                 placeholderTextColor={Colors.textSecondary}
-                secureTextEntry
+                secureTextEntry={!mostrarSenha}
+                autoCapitalize="none"
               />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setMostrarSenha(!mostrarSenha)}
+              >
+                {mostrarSenha ? (
+                  <EyeOff size={20} color={Colors.textSecondary} />
+                ) : (
+                  <Eye size={20} color={Colors.textSecondary} />
+                )}
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -223,6 +235,14 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontWeight: "600",
     marginTop: 0,
+  },
+  eyeButton: {
+    position: "absolute",
+    right: 14,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    padding: 8,
   },
   formContainer: {
     backgroundColor: Colors.white,

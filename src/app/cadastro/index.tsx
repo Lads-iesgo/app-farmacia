@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { Lock, Mail, Phone, User } from "lucide-react-native";
+import { Eye, EyeOff, Lock, Mail, Phone, User } from "lucide-react-native";
 import React from "react";
 import {
   Image,
@@ -25,6 +25,9 @@ export default function RegisterScreen() {
   const [email, setEmail] = React.useState("");
   const [senha, setSenha] = React.useState("");
   const [confirmarSenha, setConfirmarSenha] = React.useState("");
+  const [mostrarSenha, setMostrarSenha] = React.useState(false);
+  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] =
+    React.useState(false);
   const [tipoUsuario, setTipoUsuario] = React.useState("ALUNO");
 
   const tiposDisponiveis = [
@@ -100,7 +103,10 @@ export default function RegisterScreen() {
                 nome: nome.trim(),
                 email: email.trim(),
                 telefone: telefone || "(00) 00000-0000",
-                especialidade: tipoUsuario === "PROFESSOR" ? "Professor" : "Aluno/Farmacêutico",
+                especialidade:
+                  tipoUsuario === "PROFESSOR"
+                    ? "Professor"
+                    : "Aluno/Farmacêutico",
               },
               {
                 headers: {
@@ -144,163 +150,161 @@ export default function RegisterScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-        <View style={styles.formContainer}>
+          <View style={styles.formContainer}>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require("../../../assets/images/logo-iesgo.png")}
+                style={styles.logoIesgo}
+                resizeMode="contain"
+              />
+              <Text style={styles.subtitle}>FARMÁCIA</Text>
+            </View>
+            <Text style={styles.welcomeText}>Crie sua conta</Text>
+            <Text style={styles.instructionText}>
+              Preencha os dados para se cadastrar
+            </Text>
+
+            <View style={styles.inputGroup}>
+              <View style={styles.inputWrapper}>
+                <User
+                  size={20}
+                  color={Colors.textSecondary}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Nome"
+                  placeholderTextColor={Colors.textSecondary}
+                  value={nome}
+                  onChangeText={setNome}
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <View style={styles.inputWrapper}>
+                <Mail
+                  size={20}
+                  color={Colors.textSecondary}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="E-mail"
+                  placeholderTextColor={Colors.textSecondary}
+                  autoCapitalize="none"
+                  value={email}
+                  onChangeText={setEmail}
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <View style={styles.inputWrapper}>
+                <Phone
+                  size={20}
+                  color={Colors.textSecondary}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Telefone"
+                  placeholderTextColor={Colors.textSecondary}
+                  value={telefone}
+                  onChangeText={setTelefone}
+                  keyboardType="phone-pad"
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <View style={styles.inputWrapper}>
+                <Lock
+                  size={20}
+                  color={Colors.textSecondary}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Senha"
+                  placeholderTextColor={Colors.textSecondary}
+                  secureTextEntry={!mostrarSenha}
+                  value={senha}
+                  onChangeText={setSenha}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity
+                  style={styles.eyeButton}
+                  onPress={() => setMostrarSenha(!mostrarSenha)}
+                >
+                  {mostrarSenha ? (
+                    <EyeOff size={20} color={Colors.textSecondary} />
+                  ) : (
+                    <Eye size={20} color={Colors.textSecondary} />
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <View style={styles.inputWrapper}>
+                <Lock
+                  size={20}
+                  color={Colors.textSecondary}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Confirmar senha"
+                  placeholderTextColor={Colors.textSecondary}
+                  secureTextEntry={!mostrarConfirmarSenha}
+                  value={confirmarSenha}
+                  onChangeText={setConfirmarSenha}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity
+                  style={styles.eyeButton}
+                  onPress={() =>
+                    setMostrarConfirmarSenha(!mostrarConfirmarSenha)
+                  }
+                >
+                  {mostrarConfirmarSenha ? (
+                    <EyeOff size={20} color={Colors.textSecondary} />
+                  ) : (
+                    <Eye size={20} color={Colors.textSecondary} />
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.loginButton,
+                carregando && styles.loginButtonDisabled,
+              ]}
+              onPress={handleRegistro}
+              disabled={carregando}
+            >
+              <Text style={styles.loginButtonText}>
+                {carregando ? "CADASTRANDO..." : "CADASTRAR"}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.registerContainer}>
+              <Text style={styles.registerText}>Já tem uma conta? </Text>
+              <Text style={styles.registerLink} onPress={handleGoToLogin}>
+                Fazer login
+              </Text>
+            </View>
+          </View>
           <View style={styles.logoContainer}>
+            {/* Logo LADS */}
             <Image
-              source={require("../../../assets/images/logo-iesgo.png")}
-              style={styles.logoIesgo}
+              source={require("../../../assets/images/logo-lads.png")}
+              style={styles.logoLads}
               resizeMode="contain"
             />
-            <Text style={styles.subtitle}>FARMÁCIA</Text>
           </View>
-          <Text style={styles.welcomeText}>Crie sua conta</Text>
-          <Text style={styles.instructionText}>
-            Preencha os dados para se cadastrar
-          </Text>
-
-          <View style={styles.inputGroup}>
-            <View style={styles.inputWrapper}>
-              <User
-                size={20}
-                color={Colors.textSecondary}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Nome"
-                placeholderTextColor={Colors.textSecondary}
-                value={nome}
-                onChangeText={setNome}
-              />
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <View style={styles.inputWrapper}>
-              <Mail
-                size={20}
-                color={Colors.textSecondary}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="E-mail"
-                placeholderTextColor={Colors.textSecondary}
-                autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
-              />
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <View style={styles.inputWrapper}>
-              <Phone
-                size={20}
-                color={Colors.textSecondary}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Telefone (opcional)"
-                placeholderTextColor={Colors.textSecondary}
-                value={telefone}
-                onChangeText={setTelefone}
-                keyboardType="phone-pad"
-              />
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <View style={styles.inputWrapper}>
-              <Lock
-                size={20}
-                color={Colors.textSecondary}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Senha"
-                placeholderTextColor={Colors.textSecondary}
-                secureTextEntry
-                value={senha}
-                onChangeText={setSenha}
-              />
-            </View>
-          </View>
-
-          {/* Seletor de tipo de usuário */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Tipo de usuário</Text>
-            <View style={styles.tipoContainer}>
-              {tiposDisponiveis.map((tipo) => (
-                <TouchableOpacity
-                  key={tipo.value}
-                  style={[
-                    styles.tipoButton,
-                    tipoUsuario === tipo.value && styles.tipoButtonActive,
-                  ]}
-                  onPress={() => setTipoUsuario(tipo.value)}
-                >
-                  <Text
-                    style={[
-                      styles.tipoButtonText,
-                      tipoUsuario === tipo.value && styles.tipoButtonTextActive,
-                    ]}
-                  >
-                    {tipo.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <View style={styles.inputWrapper}>
-              <Lock
-                size={20}
-                color={Colors.textSecondary}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Confirmar senha"
-                placeholderTextColor={Colors.textSecondary}
-                secureTextEntry
-                value={confirmarSenha}
-                onChangeText={setConfirmarSenha}
-              />
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={[
-              styles.loginButton,
-              carregando && styles.loginButtonDisabled,
-            ]}
-            onPress={handleRegistro}
-            disabled={carregando}
-          >
-            <Text style={styles.loginButtonText}>
-              {carregando ? "CADASTRANDO..." : "CADASTRAR"}
-            </Text>
-          </TouchableOpacity>
-
-          <View style={styles.registerContainer}>
-            <Text style={styles.registerText}>Já tem uma conta? </Text>
-            <Text style={styles.registerLink} onPress={handleGoToLogin}>
-              Fazer login
-            </Text>
-          </View>
-        </View>
-        <View style={styles.logoContainer}>
-          {/* Logo LADS */}
-          <Image
-            source={require("../../../assets/images/logo-lads.png")}
-            style={styles.logoLads}
-            resizeMode="contain"
-          />
-        </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -332,6 +336,14 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontWeight: "600",
     marginTop: 50,
+  },
+  eyeButton: {
+    position: "absolute",
+    right: 14,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    padding: 8,
   },
   formContainer: {
     backgroundColor: Colors.white,
@@ -471,4 +483,3 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
 });
-

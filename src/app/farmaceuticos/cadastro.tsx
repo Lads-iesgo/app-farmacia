@@ -1,14 +1,14 @@
 import { useRouter } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react-native";
 import React, { useState } from "react";
 import {
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../_components/Colors";
@@ -22,17 +22,36 @@ export default function CadastroFarmaceuticoScreen() {
   const router = useRouter();
   const { showNotification } = useNotification();
   const [loading, setLoading] = useState(false);
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
 
   const [form, setForm] = useState({
     nome: "",
     email: "",
     telefone: "",
     especialidade: "",
+    senha: "",
+    confirmarSenha: "",
   });
 
   const handleCadastrar = async () => {
     if (!form.nome || !form.email || !form.telefone) {
       showNotification("error", "Preencha nome, email e telefone");
+      return;
+    }
+
+    if (!form.senha) {
+      showNotification("error", "Preencha a senha do farmacêutico");
+      return;
+    }
+
+    if (form.senha.length < 6) {
+      showNotification("error", "A senha deve ter pelo menos 6 caracteres");
+      return;
+    }
+
+    if (form.senha !== form.confirmarSenha) {
+      showNotification("error", "As senhas não coincidem");
       return;
     }
 
@@ -43,6 +62,7 @@ export default function CadastroFarmaceuticoScreen() {
         email: form.email,
         telefone: form.telefone,
         especialidade: form.especialidade || null,
+        senha: form.senha,
       });
 
       showNotification("success", "Farmacêutico cadastrado com sucesso!");
@@ -94,14 +114,6 @@ export default function CadastroFarmaceuticoScreen() {
             />
 
             <FormInput
-              label="Email *"
-              placeholder="email@example.com"
-              keyboardType="email-address"
-              value={form.email}
-              onChangeText={(v) => setForm({ ...form, email: v })}
-            />
-
-            <FormInput
               label="Telefone *"
               placeholder="(11) 99999-9999"
               keyboardType="phone-pad"
@@ -112,11 +124,56 @@ export default function CadastroFarmaceuticoScreen() {
             />
 
             <FormInput
-              label="Especialidade"
-              placeholder="Ex: Farmacologia"
-              value={form.especialidade}
-              onChangeText={(v) => setForm({ ...form, especialidade: v })}
+              label="Email *"
+              placeholder="email@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={form.email}
+              onChangeText={(v) => setForm({ ...form, email: v })}
             />
+            <View style={styles.passwordWrapper}>
+              <FormInput
+                label="Senha *"
+                placeholder="Mínimo 6 caracteres"
+                secureTextEntry={!mostrarSenha}
+                autoCapitalize="none"
+                value={form.senha}
+                onChangeText={(v) => setForm({ ...form, senha: v })}
+                style={styles.passwordInput}
+              />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setMostrarSenha(!mostrarSenha)}
+              >
+                {mostrarSenha ? (
+                  <EyeOff size={20} color={Colors.textSecondary} />
+                ) : (
+                  <Eye size={20} color={Colors.textSecondary} />
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.passwordWrapper}>
+              <FormInput
+                label="Confirmar senha *"
+                placeholder="Repita a senha"
+                secureTextEntry={!mostrarConfirmarSenha}
+                autoCapitalize="none"
+                value={form.confirmarSenha}
+                onChangeText={(v) => setForm({ ...form, confirmarSenha: v })}
+                style={styles.passwordInput}
+              />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)}
+              >
+                {mostrarConfirmarSenha ? (
+                  <EyeOff size={20} color={Colors.textSecondary} />
+                ) : (
+                  <Eye size={20} color={Colors.textSecondary} />
+                )}
+              </TouchableOpacity>
+            </View>
 
             <View style={styles.buttonsContainer}>
               <TouchableOpacity
@@ -163,6 +220,23 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: Colors.text,
     marginBottom: 20,
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginVertical: 20,
+  },
+  passwordWrapper: {
+    position: "relative",
+  },
+  passwordInput: {
+    paddingRight: 48,
+  },
+  eyeButton: {
+    position: "absolute",
+    right: 14,
+    bottom: 30,
+    padding: 4,
   },
   buttonsContainer: { marginTop: 8, gap: 12 },
   submitButton: {

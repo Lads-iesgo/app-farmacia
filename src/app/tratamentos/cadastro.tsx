@@ -36,8 +36,10 @@ export default function CadastroTratamentoScreen() {
   const { showNotification } = useNotification();
   const [pacientes, setPacientes] = useState<any[]>([]);
   const [medicamentos, setMedicamentos] = useState<any[]>([]);
+  const [medicamentosFiltrados, setMedicamentosFiltrados] = useState<any[]>([]);
   const [farmaceuticos, setFarmaceuticos] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [busca, setBusca] = useState("");
 
   const [form, setForm] = useState({
     idPaciente: "",
@@ -73,7 +75,7 @@ export default function CadastroTratamentoScreen() {
                 decoded?.id_usuario || decoded?.id || decoded?.sub || "",
               );
             }
-          } catch { }
+          } catch {}
         }
 
         const storedCriados = await AsyncStorage.getItem(
@@ -99,8 +101,8 @@ export default function CadastroTratamentoScreen() {
 
         setMedicamentos(
           medResponse.data.medicamentos ||
-          medResponse.data.dados ||
-          (Array.isArray(medResponse.data) ? medResponse.data : []),
+            medResponse.data.dados ||
+            (Array.isArray(medResponse.data) ? medResponse.data : []),
         );
 
         const allFarmaceuticos =
@@ -139,8 +141,8 @@ export default function CadastroTratamentoScreen() {
             ...prev,
             idFarmaceutico: String(
               meuFarmaceutico.id_farmaceutico ||
-              meuFarmaceutico.id_usuario ||
-              "",
+                meuFarmaceutico.id_usuario ||
+                "",
             ),
           }));
         }
@@ -196,7 +198,7 @@ export default function CadastroTratamentoScreen() {
             idUsuarioCriador =
               decoded?.id_usuario || decoded?.id || decoded?.sub;
           }
-        } catch { }
+        } catch {}
       }
 
       if (!idUsuarioCriador) {
@@ -407,6 +409,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.primary,
   },
+  searchIcon: { marginRight: 8 },
+  searchInput: { flex: 1, height: "100%", fontSize: 14, color: Colors.text },
   formSectionTitle: {
     fontSize: 16,
     fontWeight: "bold",

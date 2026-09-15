@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react-native";
+import { ChevronDown, Search } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   FlatList,
@@ -6,6 +6,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -34,11 +35,24 @@ export default function SelectField({
   required,
 }: SelectProps) {
   const [visible, setVisible] = useState(false);
+  const [busca, setBusca] = useState("");
   const selectedLabel = options.find((opt) => opt.value === value)?.label || "";
+
+  const filteredOptions = busca
+    ? options.filter((opt) =>
+        opt.label.toLowerCase().includes(busca.toLowerCase()),
+      )
+    : options;
 
   const handleSelect = (selectedValue: string) => {
     onSelect(selectedValue);
     setVisible(false);
+    setBusca("");
+  };
+
+  const handleClose = () => {
+    setVisible(false);
+    setBusca("");
   };
 
   return (
@@ -60,11 +74,24 @@ export default function SelectField({
       </TouchableOpacity>
 
       <Modal visible={visible} transparent animationType="fade">
-        <Pressable style={styles.overlay} onPress={() => setVisible(false)}>
-          <View style={styles.modal}>
+        <Pressable style={styles.overlay} onPress={handleClose}>
+          <Pressable style={styles.modal} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.modalTitle}>{label}</Text>
+
+            <View style={styles.searchBox}>
+              <Search size={16} color={Colors.textSecondary} style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Pesquisar..."
+                placeholderTextColor={Colors.textSecondary}
+                value={busca}
+                onChangeText={setBusca}
+                autoCapitalize="none"
+              />
+            </View>
+
             <FlatList
-              data={options}
+              data={filteredOptions}
               keyExtractor={(item) => item.value}
               renderItem={({ item }) => (
                 <TouchableOpacity
@@ -85,10 +112,10 @@ export default function SelectField({
                 </TouchableOpacity>
               )}
               ListEmptyComponent={
-                <Text style={styles.emptyText}>Nenhum item cadastrado</Text>
+                <Text style={styles.emptyText}>Nenhum item encontrado</Text>
               }
             />
-          </View>
+          </Pressable>
         </Pressable>
       </Modal>
     </View>
@@ -126,8 +153,21 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 12,
     padding: 16,
-    maxHeight: 360,
+    maxHeight: 400,
   },
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 10,
+    backgroundColor: Colors.background,
+    height: 40,
+  },
+  searchIcon: { marginRight: 6 },
+  searchInput: { flex: 1, fontSize: 14, color: Colors.text, height: "100%" },
   modalTitle: {
     fontSize: 16,
     fontWeight: "bold",
