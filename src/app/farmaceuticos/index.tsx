@@ -166,17 +166,9 @@ export default function FarmaceuticosScreen() {
             renderItem={({ item, index }) => (
               <ItemLista
                 data={[
-                  {
-                    label: "Nome",
-                    value: item.nome || "N/A",
-                  },
+                  { label: "Nome", value: item.nome || "N/A" },
                   { label: "Email", value: item.email || "N/A" },
                   { label: "Telefone", value: item.telefone || "N/A" },
-                  {
-                    label: "Especialidade",
-                    value: item.especialidade || "N/A",
-                  },
-                  { label: "CRF", value: item.crf || "N/A" },
                 ]}
                 isLast={index === filteredFarmaceuticos.length - 1}
                 onEdit={() => handleEditClick(String(item.id_farmaceutico))}

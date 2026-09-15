@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { Lock, Mail, Phone, User } from "lucide-react-native";
+import { Eye, EyeOff, Lock, Mail, Phone, User } from "lucide-react-native";
 import React from "react";
 import {
   Image,
@@ -24,6 +24,9 @@ export default function RegisterScreen() {
   const [email, setEmail] = React.useState("");
   const [senha, setSenha] = React.useState("");
   const [confirmarSenha, setConfirmarSenha] = React.useState("");
+  const [mostrarSenha, setMostrarSenha] = React.useState(false);
+  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] =
+    React.useState(false);
   const [tipoUsuario, setTipoUsuario] = React.useState("ALUNO");
   const [telefone, setTelefone] = React.useState("");
   const [carregando, setCarregando] = React.useState(false);
@@ -189,7 +192,7 @@ export default function RegisterScreen() {
               />
               <TextInput
                 style={styles.input}
-                placeholder="Telefone (opcional)"
+                placeholder="Telefone"
                 placeholderTextColor={Colors.textSecondary}
                 value={telefone}
                 onChangeText={setTelefone}
@@ -209,10 +212,21 @@ export default function RegisterScreen() {
                 style={styles.input}
                 placeholder="Senha"
                 placeholderTextColor={Colors.textSecondary}
-                secureTextEntry
+                secureTextEntry={!mostrarSenha}
                 value={senha}
                 onChangeText={setSenha}
+                autoCapitalize="none"
               />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setMostrarSenha(!mostrarSenha)}
+              >
+                {mostrarSenha ? (
+                  <EyeOff size={20} color={Colors.textSecondary} />
+                ) : (
+                  <Eye size={20} color={Colors.textSecondary} />
+                )}
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -227,10 +241,21 @@ export default function RegisterScreen() {
                 style={styles.input}
                 placeholder="Confirmar senha"
                 placeholderTextColor={Colors.textSecondary}
-                secureTextEntry
+                secureTextEntry={!mostrarConfirmarSenha}
                 value={confirmarSenha}
                 onChangeText={setConfirmarSenha}
+                autoCapitalize="none"
               />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)}
+              >
+                {mostrarConfirmarSenha ? (
+                  <EyeOff size={20} color={Colors.textSecondary} />
+                ) : (
+                  <Eye size={20} color={Colors.textSecondary} />
+                )}
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -292,6 +317,14 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontWeight: "600",
     marginTop: 50,
+  },
+  eyeButton: {
+    position: "absolute",
+    right: 14,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    padding: 8,
   },
   formContainer: {
     backgroundColor: Colors.white,

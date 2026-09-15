@@ -161,14 +161,6 @@ export default function EditarFarmaceuticoScreen() {
               setForm({ ...form, telefone: formatarTelefone(v) })
             }
           />
-
-          <FormInput
-            label="Especialidade"
-            placeholder="Ex: Farmácia Clínica"
-            value={form.especialidade}
-            onChangeText={(v) => setForm({ ...form, especialidade: v })}
-          />
-
           <View style={styles.buttonsContainer}>
             <TouchableOpacity
               style={[styles.submitButton, loading && styles.buttonDisabled]}
